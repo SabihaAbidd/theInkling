@@ -1,0 +1,48 @@
+name: quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.13"
+          cache: pip
+      - name: Install Pipenv
+        run: python -m pip install pipenv==2026.10.0
+      - name: Install locked dependencies
+        run: pipenv sync --dev
+      - name: Lint backend and tests
+        run: pipenv run ruff check app tests
+      - name: Check backend formatting
+        run: pipenv run ruff format --check app tests
+      - name: Run personalization checks
+        run: pipenv run python -m unittest discover -s tests -v
+
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run build

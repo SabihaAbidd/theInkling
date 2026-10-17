@@ -89,7 +89,12 @@ Edition generation is keyed by reader and UTC date, returns immediately after qu
 
     pipenv run lint
     pipenv run format
+    pipenv run ruff check app tests
+    pipenv run ruff format --check app tests
     python -m unittest discover -s tests -v
     npm run lint
     npm run format:check
     npm run build
+
+GitHub Actions runs backend lint/format and the personalization checks alongside
+frontend lint/format/build on pushes to `main` and pull requests.

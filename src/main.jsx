@@ -14,6 +14,7 @@ import {
   LoaderCircle,
   LogOut,
   Newspaper,
+  Printer,
   RefreshCw,
   Search,
   Settings2,
@@ -805,6 +806,15 @@ function TodayPage({
           <span>YOUR MORNING EDITION</span>
         </span>
         <span className="edition-date">{formatDateOnly(edition.date)}</span>
+        <button
+          className="button button-outline print-button"
+          type="button"
+          onClick={() => window.print()}
+          aria-label="Print this edition or save it as a PDF"
+        >
+          <Printer size={15} />
+          Save as PDF
+        </button>
       </div>
       <section className="lead-layout" aria-labelledby="lead-title">
         <article className="lead-story">

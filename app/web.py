@@ -34,25 +34,25 @@ from app.tasks.editions import build_edition_task
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 SAFE_TEXT_RE = re.compile(r"^[\w\s.#/+&():,'-]+$")
-DEFAULT_CORS_ORIGIN_REGEX = (
-    r"^https://.*\.vercel\.app$|"
-    r"^https://.*\.onrender\.com$|"
-    r"^http://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|"
-    r"172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+):(5173|4173|8000)$"
-)
 
-app = FastAPI(title="The Inkling Newspaper API")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+
+def configured_cors_origins() -> list[str]:
+    """Return only the explicit browser origins trusted by this deployment."""
+
+    return [
         origin.strip()
         for origin in os.getenv(
             "CORS_ORIGINS",
             "http://127.0.0.1:5173,http://localhost:5173",
         ).split(",")
         if origin.strip()
-    ],
-    allow_origin_regex=DEFAULT_CORS_ORIGIN_REGEX,
+    ]
+
+
+app = FastAPI(title="The Inkling Newspaper API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=configured_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

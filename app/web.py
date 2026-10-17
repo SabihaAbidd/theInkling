@@ -11,7 +11,7 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
@@ -473,10 +473,10 @@ def current_user(
 
 
 @app.get("/")
-def index() -> FileResponse:
-    """Serve the local test GUI."""
+def index() -> RedirectResponse:
+    """Open the configured reader client from the API root."""
 
-    return FileResponse(WEB_DIR / "index.html")
+    return RedirectResponse(os.getenv("FRONTEND_URL", "http://localhost:5173"))
 
 
 @app.get("/api/health")

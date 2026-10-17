@@ -40,6 +40,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-ai_news}:${POSTGRES_PASSWORD:-ai_news_password}@postgres:5432/${POSTGRES_DB:-ai_news}
       REDIS_URL: redis://redis:6379/0
+      FRONTEND_URL: http://localhost:5173
       CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
     command: pipenv run uvicorn app.web:app --host 0.0.0.0 --port 8000
     ports:

@@ -71,6 +71,8 @@ function App() {
   const [checking, setChecking] = useState(Boolean(token));
   const [sessionMessage, setSessionMessage] = useState("");
   const [authMode, setAuthMode] = useState("");
+  const showDemoLanding =
+    LOCAL_DEMO_MODE && new URLSearchParams(window.location.search).get("view") === "landing";
 
   useEffect(() => {
     if (!token) return undefined;
@@ -99,6 +101,7 @@ function App() {
   }, [token]);
 
   if (LOCAL_DEMO_MODE) {
+    if (showDemoLanding) return <InklingLanding onOpenAuth={() => (window.location.href = "/")} />;
     return <ReaderApp user={LOCAL_DEMO_USER} token="" onSignOut={() => {}} />;
   }
 

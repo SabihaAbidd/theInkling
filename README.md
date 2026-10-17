@@ -137,24 +137,29 @@ GMAIL_APP_PASSWORD=your_gmail_app_password
 
 ## Local Development
 
-Install dependencies:
+Create a local environment file and install dependencies with Pipenv:
 
 ```powershell
-pip install -r requirements.txt
-npm install
+Copy-Item .env.example .env
+pipenv sync --dev
+npm ci
 ```
 
 Run the backend:
 
 ```powershell
-py -m uvicorn app.web:app --host 127.0.0.1 --port 8000 --reload
+pipenv run uvicorn app.web:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Run the frontend:
+Run the frontend in a second terminal:
 
 ```powershell
 npm run dev
 ```
+
+Run backend lint and formatting checks with `pipenv run lint` and
+`pipenv run format`. Run frontend checks with `npm run lint` and
+`npm run format:check`.
 
 Open:
 

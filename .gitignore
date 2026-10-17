@@ -20,6 +20,7 @@ dist/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # IDE / Editor
 .vscode/
@@ -37,6 +38,8 @@ Thumbs.db
 .pytest_cache/
 htmlcov/
 .coverage
+ruff_cache/
+.ruff_cache/
 
 # Local database files
 data/

@@ -28,6 +28,10 @@ rewrites the selected set in one structured model call and keeps publisher links
 intact. If model calls fail, deterministic ranking and publisher summaries
 remain available.
 
+Curated source requests run with a bounded pool of eight concurrent fetches. Each
+source has a timeout and can fail independently; successful sources still feed
+the edition, and results retain curated source order.
+
 ## Start locally
 
 ### Docker Compose

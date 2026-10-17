@@ -116,7 +116,7 @@
 
 - Migration ledger: this section and the sprint commits on `main`.
 - Canonical primitives: CSS tokens in `src/index.css`; shared semantic components in `src/main.jsx`.
-- Current slices: reader shell/onboarding, article actions, archive, PDF export, and ranking model.
+- Current slices: reader shell/onboarding, article actions, archive, PDF export, and hybrid TF-IDF plus LangChain ranking.
 - Legacy payment and AI-only aggregator code is still being retired; don't add new UI paths to it.
 - Rollback is by commit; edition snapshots remain backward-compatible JSON records.
 

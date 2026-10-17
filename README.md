@@ -22,10 +22,11 @@ Architecture flow:
     LangGraph traces -> LangSmith (when enabled; reader identity is excluded)
 
 The ranker learns from saved, skipped, and longer-read stories. It combines
-transparent topic and feedback signals with a bounded model rerank of up to 30
-candidate stories. The editor rewrites the selected set in one structured model
-call and keeps publisher links intact. If model calls fail, deterministic ranking
-and publisher summaries remain available.
+topic and source preferences with a per-reader TF-IDF feedback model, then applies
+a bounded LangChain model rerank to up to 30 candidate stories. The editor
+rewrites the selected set in one structured model call and keeps publisher links
+intact. If model calls fail, deterministic ranking and publisher summaries
+remain available.
 
 ## Start locally
 
@@ -88,6 +89,7 @@ Edition generation is keyed by reader and UTC date, returns immediately after qu
 
     pipenv run lint
     pipenv run format
+    python -m unittest discover -s tests -v
     npm run lint
     npm run format:check
     npm run build

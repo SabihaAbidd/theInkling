@@ -12,7 +12,7 @@ def classify_llm_error(error: str | None) -> str | None:
         return None
 
     lowered = error.lower()
-    if "missing gemini_api_key" in lowered:
+    if "missing groq_api_key" in lowered:
         return "missing_key"
     if "429" in lowered or "rate" in lowered or "quota" in lowered:
         return "rate_limited"
@@ -43,8 +43,8 @@ def llm_status_message(status: str | None) -> str | None:
         return None
     if status == "missing_key":
         return (
-            "The backend AI API key is missing. Please configure GROQ_API_KEY or "
-            "GEMINI_API_KEY on Render."
+            "The backend AI API key is missing. Configure GROQ_API_KEY to "
+            "enable AI editing."
         )
     if status == "rate_limited":
         return (
@@ -55,7 +55,7 @@ def llm_status_message(status: str | None) -> str | None:
         return (
             "The backend AI API key is invalid, forbidden, or not enabled "
             "for this model. "
-            "Please update the key on Render and redeploy."
+            "Please update GROQ_API_KEY in the deployment environment and redeploy."
         )
     if status == "timeout":
         return "The AI request timed out. Please try again in a moment."

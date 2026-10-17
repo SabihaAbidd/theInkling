@@ -85,7 +85,8 @@ def print_startup_report() -> None:
         )
     print(f"CORS_ORIGINS: {env_status('CORS_ORIGINS')}", flush=True)
     print(f"AUTH_SECRET_KEY: {env_status('AUTH_SECRET_KEY')}", flush=True)
-    print(f"GEMINI_API_KEY: {env_status('GEMINI_API_KEY')}", flush=True)
+    print(f"GROQ_API_KEY: {env_status('GROQ_API_KEY')}", flush=True)
+    print(f"LANGSMITH_API_KEY: {env_status('LANGSMITH_API_KEY')}", flush=True)
     print(f"STRIPE_SECRET_KEY: {env_status('STRIPE_SECRET_KEY')}", flush=True)
     print("==================================", flush=True)
 

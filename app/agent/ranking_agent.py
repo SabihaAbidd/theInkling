@@ -8,8 +8,7 @@ from dataclasses import dataclass
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
-from app.agent.llm_client import default_model, default_provider
-from app.agent.model_provider import create_chat_model
+from app.agent.model_provider import create_chat_model, default_model, default_provider
 from app.profiles.user_profile import UserProfile
 
 DEFAULT_RANKING_MODEL = default_model(default_provider())

@@ -85,6 +85,8 @@ def parse_token(token: str) -> dict:
 def sign(value: str) -> str:
     """Return an HMAC signature for a token payload."""
 
-    secret = os.getenv("AUTH_SECRET_KEY") or os.getenv("GEMINI_API_KEY") or "dev-secret"
+    secret = os.getenv("AUTH_SECRET_KEY")
+    if not secret:
+        raise RuntimeError("Missing AUTH_SECRET_KEY in environment.")
     digest = hmac.new(secret.encode(), value.encode(), hashlib.sha256).digest()
     return base64.urlsafe_b64encode(digest).decode()

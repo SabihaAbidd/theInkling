@@ -4,9 +4,26 @@ from __future__ import annotations
 
 import os
 
+from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 
 DEFAULT_MODEL = "openai/gpt-oss-120b"
+load_dotenv()
+
+
+def default_provider() -> str:
+    """Return the configured provider, defaulting to Groq."""
+
+    return os.getenv("LLM_PROVIDER", "groq").strip().lower()
+
+
+def default_model(provider: str | None = None) -> str:
+    """Return the configured model for the supported provider."""
+
+    selected_provider = provider or default_provider()
+    if selected_provider != "groq":
+        raise ValueError(f"Unsupported LLM_PROVIDER {selected_provider!r}; use 'groq'.")
+    return os.getenv("LLM_MODEL", DEFAULT_MODEL).strip()
 
 
 def create_chat_model(
@@ -24,7 +41,7 @@ def create_chat_model(
         raise RuntimeError("Missing GROQ_API_KEY in environment.")
 
     return ChatGroq(
-        model=model_name or os.getenv("LLM_MODEL", DEFAULT_MODEL),
+        model=model_name or default_model(provider),
         api_key=selected_api_key,
         temperature=0,
         max_retries=2,

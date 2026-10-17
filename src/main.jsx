@@ -71,8 +71,7 @@ function App() {
   const [checking, setChecking] = useState(Boolean(token));
   const [sessionMessage, setSessionMessage] = useState("");
   const [authMode, setAuthMode] = useState("");
-  const showDemoLanding =
-    LOCAL_DEMO_MODE && new URLSearchParams(window.location.search).get("view") === "landing";
+  const demoView = new URLSearchParams(window.location.search).get("view");
 
   useEffect(() => {
     if (!token) return undefined;
@@ -101,7 +100,27 @@ function App() {
   }, [token]);
 
   if (LOCAL_DEMO_MODE) {
-    if (showDemoLanding) return <InklingLanding onOpenAuth={() => (window.location.href = "/")} />;
+    if (!demoView || demoView === "landing") {
+      return (
+        <InklingLanding
+          onOpenAuth={(mode) =>
+            window.location.assign(`/?view=${mode === "register" ? "register" : "sign-in"}`)
+          }
+        />
+      );
+    }
+    if (demoView === "sign-in" || demoView === "register") {
+      return (
+        <AuthScreen
+          demoMode
+          message=""
+          initialMode={demoView === "register" ? "register" : "login"}
+          onBack={() => window.location.assign("/?view=landing")}
+          onAuth={() => window.location.assign("/?view=reader")}
+        />
+      );
+    }
+    if (demoView !== "reader") return <InklingLanding onOpenAuth={() => {}} />;
     return <ReaderApp user={LOCAL_DEMO_USER} token="" onSignOut={() => {}} />;
   }
 
@@ -145,7 +164,7 @@ function App() {
   );
 }
 
-function AuthScreen({ message, initialMode, onBack, onAuth }) {
+function AuthScreen({ message, initialMode, onBack, onAuth, demoMode = false }) {
   const [isRegister, setIsRegister] = useState(initialMode === "register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -185,6 +204,10 @@ function AuthScreen({ message, initialMode, onBack, onAuth }) {
 
     setPending(true);
     try {
+      if (demoMode) {
+        onAuth();
+        return;
+      }
       const result = await api("/api/auth/" + (isRegister ? "register" : "login"), {
         method: "POST",
         body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
@@ -256,6 +279,12 @@ function AuthScreen({ message, initialMode, onBack, onAuth }) {
               ? "Create an account to save your topics and daily editions."
               : "Sign in to open today's paper and your archive."}
           </p>
+          {demoMode && (
+            <div className="notice notice-info" role="status">
+              Demo access: use a valid email and any password with at least 6 characters. Nothing is
+              sent or saved.
+            </div>
+          )}
           {notice && (
             <div className="notice notice-info" role="status">
               {notice}

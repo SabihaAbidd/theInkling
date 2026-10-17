@@ -41,7 +41,7 @@ remain available.
 
 The Compose stack includes PostgreSQL, Redis, the API, the Celery worker, and the Vite development server. First startup installs frontend dependencies and creates the database tables.
 
-`render.yaml` defines the API service only. It uses the Pipenv lockfile and Python 3.12; configure reachable PostgreSQL and Redis URLs, allowed frontend origins, and deploy the Vite client separately. The Blueprint generates `AUTH_SECRET_KEY` and prompts for provider credentials without storing secret values in Git.
+`render.yaml` defines the API service only. It uses the Pipenv lockfile and Python 3.12; configure reachable PostgreSQL and Redis URLs, exact frontend origins in `CORS_ORIGINS`, and deploy the Vite client separately. The Blueprint generates `AUTH_SECRET_KEY` and prompts for provider credentials without storing secret values in Git.
 
 ### Run API and frontend outside Docker
 

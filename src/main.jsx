@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { motion } from "motion/react";
 import Hls from "hls.js";
@@ -17,8 +17,7 @@ import {
 } from "lucide-react";
 import "./index.css";
 
-const VIDEO_URL =
-  "https://stream.mux.com/kimF2ha9zLrX64H00UgLGPflCzNtl1T0215MlAmeOztv8.m3u8";
+const VIDEO_URL = "https://stream.mux.com/kimF2ha9zLrX64H00UgLGPflCzNtl1T0215MlAmeOztv8.m3u8";
 
 const defaultPrefs = {
   hours: 72,
@@ -149,17 +148,13 @@ function BrandMark({ compact = false }) {
       <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/20 bg-white text-[#07111f] shadow-lg shadow-black/20">
         <div className="text-center leading-none">
           <div className="text-sm font-semibold tracking-[-0.02em]">AN</div>
-          <div className="text-[8px] font-semibold uppercase tracking-[0.12em]">
-            News
-          </div>
+          <div className="text-[8px] font-semibold uppercase tracking-[0.12em]">News</div>
         </div>
       </div>
       {!compact && (
         <div className="leading-tight text-left">
           <div className="text-sm font-semibold text-white">AI News</div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">
-            Aggregator
-          </div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">Aggregator</div>
         </div>
       )}
     </div>
@@ -294,8 +289,8 @@ function Hero({ onOpenAuth }) {
             <br className="hidden md:block" /> what you care about
           </motion.h1>
           <p className="mx-auto max-w-2xl text-white/70 text-sm md:text-base leading-7">
-            Track OpenAI, Anthropic, research labs, product launches, and trusted
-            AI media in one personalized dashboard with daily email digests.
+            Track OpenAI, Anthropic, research labs, product launches, and trusted AI media in one
+            personalized dashboard with daily email digests.
           </p>
         </div>
 
@@ -334,9 +329,18 @@ function InfoModal({ type, onClose, onOpenAuth }) {
       title: "A personal operating layer for AI news",
       body: "AI News Aggregator combines source scraping, AI summarization, preference ranking, subscriptions, and email delivery into one workflow for tracking fast-moving AI updates.",
       items: [
-        ["Priorities dashboard", "Pick profiles, sources, keywords, and content types with simple controls instead of raw setup."],
-        ["Digest maker", "Choose top-N articles from any time window and rank them with LLM-based ranking plus deterministic fallback."],
-        ["Subscription email agent", "Subscribed users get a daily 24-hour digest using the same saved preferences and ranking surface."],
+        [
+          "Priorities dashboard",
+          "Pick profiles, sources, keywords, and content types with simple controls instead of raw setup.",
+        ],
+        [
+          "Digest maker",
+          "Choose top-N articles from any time window and rank them with LLM-based ranking plus deterministic fallback.",
+        ],
+        [
+          "Subscription email agent",
+          "Subscribed users get a daily 24-hour digest using the same saved preferences and ranking surface.",
+        ],
       ],
     },
     pricing: {
@@ -345,8 +349,14 @@ function InfoModal({ type, onClose, onOpenAuth }) {
       body: "The current Stripe setup can save a card at $0.00 using Checkout setup mode. Later, you can switch to a live recurring Stripe Price for paid subscriptions.",
       items: [
         ["Free trial", "Use the dashboard, set priorities, and generate ranked digests."],
-        ["Subscription flow", "Use Stripe Checkout to collect payment credentials safely and store subscription records."],
-        ["Paid launch", "Set STRIPE_PRICE_ID to a live recurring price when you are ready to charge $1, $2, or more."],
+        [
+          "Subscription flow",
+          "Use Stripe Checkout to collect payment credentials safely and store subscription records.",
+        ],
+        [
+          "Paid launch",
+          "Set STRIPE_PRICE_ID to a live recurring price when you are ready to charge $1, $2, or more.",
+        ],
       ],
     },
     about: {
@@ -356,7 +366,10 @@ function InfoModal({ type, onClose, onOpenAuth }) {
       items: [
         ["Backend", "FastAPI, PostgreSQL, SQLAlchemy, Gemini-powered digest and ranking agents."],
         ["Frontend", "React, Vite, Tailwind CSS v4, Motion, Lucide icons, HLS background video."],
-        ["Payments", "Stripe Checkout with local records for users, subscriptions, and transactions."],
+        [
+          "Payments",
+          "Stripe Checkout with local records for users, subscriptions, and transactions.",
+        ],
       ],
     },
   }[type];
@@ -372,29 +385,26 @@ function InfoModal({ type, onClose, onOpenAuth }) {
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">
-              {content.eyebrow}
-            </p>
+            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">{content.eyebrow}</p>
             <h2
               style={{ fontFamily: "'Instrument Serif', serif" }}
               className="mt-2 text-3xl leading-tight sm:text-4xl md:text-5xl"
             >
               {content.title}
             </h2>
-            <p className="mt-4 text-white/65 leading-7 max-w-2xl">
-              {content.body}
-            </p>
+            <p className="mt-4 text-white/65 leading-7 max-w-2xl">{content.body}</p>
           </div>
-          <button className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/75" onClick={onClose} type="button">
+          <button
+            className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/75"
+            onClick={onClose}
+            type="button"
+          >
             Close
           </button>
         </div>
         <div className="mt-7 grid md:grid-cols-3 gap-3">
           {content.items.map(([title, text]) => (
-            <div
-              key={title}
-              className="rounded-3xl border border-white/10 bg-white/[0.035] p-4"
-            >
+            <div key={title} className="rounded-3xl border border-white/10 bg-white/[0.035] p-4">
               <h3 className="font-semibold">{title}</h3>
               <p className="mt-2 text-sm leading-6 text-white/55">{text}</p>
             </div>
@@ -422,8 +432,6 @@ function AuthModal({ mode, initialEmail, onClose, onAuth }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => setIsRegister(mode !== "login"), [mode]);
 
   async function submit(event) {
     event.preventDefault();
@@ -494,18 +502,22 @@ function AuthModal({ mode, initialEmail, onClose, onAuth }) {
       >
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">
-              Account
-            </p>
-            <h2 className="text-2xl font-semibold">
-              {isRegister ? "Create account" : "Login"}
-            </h2>
+            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">Account</p>
+            <h2 className="text-2xl font-semibold">{isRegister ? "Create account" : "Login"}</h2>
           </div>
-          <button className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/75" onClick={onClose} type="button">
+          <button
+            className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/75"
+            onClick={onClose}
+            type="button"
+          >
             Close
           </button>
         </div>
-        {notice && <p className="mb-4 rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-3 text-sm text-emerald-100">{notice}</p>}
+        {notice && (
+          <p className="mb-4 rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-3 text-sm text-emerald-100">
+            {notice}
+          </p>
+        )}
         <div className="grid gap-4">
           {isRegister && (
             <Field
@@ -563,7 +575,7 @@ function AuthModal({ mode, initialEmail, onClose, onAuth }) {
   );
 }
 
-function Dashboard({ user, token, onLogout, onUser }) {
+function Dashboard({ user, token, onLogout }) {
   const [page, setPage] = useState("preferences");
   const [prefs, setPrefs] = useState(() => normalizePreferences(user.preferences));
   const [digests, setDigests] = useState(null);
@@ -607,7 +619,9 @@ function Dashboard({ user, token, onLogout, onUser }) {
       return;
     }
     setIsDigestLoading(true);
-    setMessage("Creating your digest. The app will map your priorities, fetch matching sources into the database, generate AI digest rows, then rank them. Please wait around 90-120 seconds.");
+    setMessage(
+      "Creating your digest. The app will map your priorities, fetch matching sources into the database, generate AI digest rows, then rank them. Please wait around 90-120 seconds.",
+    );
     try {
       const data = await api("/api/dashboard/digests", {
         method: "POST",
@@ -621,14 +635,15 @@ function Dashboard({ user, token, onLogout, onUser }) {
       const generationText = generation
         ? ` Digests processed: ${generation.processed}, saved: ${generation.created_or_updated}${generation.stopped_reason ? `, stopped: ${generation.stopped_reason}` : ""}.`
         : "";
-      const scrapeText = scrape
-        ? ` Sources checked/stored: ${scrape.stored_or_updated}.`
-        : "";
+      const scrapeText = scrape ? ` Sources checked/stored: ${scrape.stored_or_updated}.` : "";
       const llmText = data.llm_status?.message ? ` ${data.llm_status.message}` : "";
-      const emptyText = data.total_items === 0
-        ? " No digest rows were available after scraping and generation. Try a larger time window, then check backend logs if this keeps happening."
-        : "";
-      setMessage(`${data.ranking_method.toUpperCase()} ranking returned ${data.total_items} items.${scrapeText}${generationText}${llmText}${emptyText}`);
+      const emptyText =
+        data.total_items === 0
+          ? " No digest rows were available after scraping and generation. Try a larger time window, then check backend logs if this keeps happening."
+          : "";
+      setMessage(
+        `${data.ranking_method.toUpperCase()} ranking returned ${data.total_items} items.${scrapeText}${generationText}${llmText}${emptyText}`,
+      );
     } catch (err) {
       setMessage(err.message);
     } finally {
@@ -683,7 +698,7 @@ function Dashboard({ user, token, onLogout, onUser }) {
         my_review: data.review,
         reviews: [
           data.review,
-          ...((current?.reviews || []).filter((review) => review.id !== data.review.id)),
+          ...(current?.reviews || []).filter((review) => review.id !== data.review.id),
         ].slice(0, 12),
       }));
       setMessage("Thanks. Your review was saved.");
@@ -714,12 +729,34 @@ function Dashboard({ user, token, onLogout, onUser }) {
             <BrandMark />
           </div>
           <nav className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:overflow-visible lg:pb-0">
-            <NavButton icon={Settings} active={page === "preferences"} onClick={() => setPage("preferences")}>Priorities</NavButton>
-            <NavButton icon={Newspaper} active={page === "digests"} onClick={() => setPage("digests")}>Digest maker</NavButton>
-            <NavButton icon={CreditCard} active={page === "subscription"} onClick={() => setPage("subscription")}>Subscription</NavButton>
-            <NavButton icon={Star} active={page === "reviews"} onClick={loadReviews}>Reviews</NavButton>
+            <NavButton
+              icon={Settings}
+              active={page === "preferences"}
+              onClick={() => setPage("preferences")}
+            >
+              Priorities
+            </NavButton>
+            <NavButton
+              icon={Newspaper}
+              active={page === "digests"}
+              onClick={() => setPage("digests")}
+            >
+              Digest maker
+            </NavButton>
+            <NavButton
+              icon={CreditCard}
+              active={page === "subscription"}
+              onClick={() => setPage("subscription")}
+            >
+              Subscription
+            </NavButton>
+            <NavButton icon={Star} active={page === "reviews"} onClick={loadReviews}>
+              Reviews
+            </NavButton>
             {user.is_admin && (
-              <NavButton icon={Shield} active={page === "admin"} onClick={loadAdmin}>Admin</NavButton>
+              <NavButton icon={Shield} active={page === "admin"} onClick={loadAdmin}>
+                Admin
+              </NavButton>
             )}
           </nav>
           <button
@@ -734,24 +771,45 @@ function Dashboard({ user, token, onLogout, onUser }) {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <p className="text-white/50 text-sm">Workspace</p>
-              <h1 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl md:text-5xl">AI news dashboard</h1>
+              <h1 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl md:text-5xl">
+                AI news dashboard
+              </h1>
             </div>
             <div className="glass-pill px-4 py-2 text-sm text-white/80">
               {user.name} · {user.subscription_status || "free"} plan
             </div>
           </div>
-        {message && <div className="mb-5 rounded-2xl bg-white/10 border border-white/15 p-4 text-sm text-white/85">{message}</div>}
+          {message && (
+            <div className="mb-5 rounded-2xl bg-white/10 border border-white/15 p-4 text-sm text-white/85">
+              {message}
+            </div>
+          )}
           {page === "preferences" && (
-            <Preferences prefs={prefs} setPrefs={setPrefs} onSave={savePrefs} onRun={loadDigests} onInvalid={setMessage} isDigestLoading={isDigestLoading} />
+            <Preferences
+              prefs={prefs}
+              setPrefs={setPrefs}
+              onSave={savePrefs}
+              onRun={loadDigests}
+              onInvalid={setMessage}
+              isDigestLoading={isDigestLoading}
+            />
           )}
           {page === "digests" && (
-            <DigestMaker prefs={prefs} setPrefs={setPrefs} onRun={loadDigests} digests={digests} isDigestLoading={isDigestLoading} />
+            <DigestMaker
+              prefs={prefs}
+              setPrefs={setPrefs}
+              onRun={loadDigests}
+              digests={digests}
+              isDigestLoading={isDigestLoading}
+            />
           )}
-          {page === "subscription" && (
-            <Subscription user={user} onCheckout={startCheckout} />
-          )}
+          {page === "subscription" && <Subscription user={user} onCheckout={startCheckout} />}
           {page === "reviews" && (
-            <ReviewsPanel reviews={reviews} onSave={saveReview} />
+            <ReviewsPanel
+              key={reviews?.my_review?.updated_at ?? "new"}
+              reviews={reviews}
+              onSave={saveReview}
+            />
           )}
           {page === "admin" && user.is_admin && (
             <AdminPanel data={adminData} onRefresh={loadAdmin} />
@@ -796,9 +854,7 @@ function GuideModal({ onClose, onStart }) {
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">
-              Quick guide
-            </p>
+            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">Quick guide</p>
             <h2
               style={{ fontFamily: "'Instrument Serif', serif" }}
               className="mt-2 text-3xl leading-tight sm:text-4xl md:text-5xl"
@@ -806,11 +862,15 @@ function GuideModal({ onClose, onStart }) {
               Here is how to use AI News
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65 sm:mt-4 sm:text-base sm:leading-7">
-              The app has three simple areas: priorities, digest making, and
-              subscription. Follow these once and the workflow becomes natural.
+              The app has three simple areas: priorities, digest making, and subscription. Follow
+              these once and the workflow becomes natural.
             </p>
           </div>
-          <button className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/80 hover:text-white" onClick={onClose} type="button">
+          <button
+            className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/80 hover:text-white"
+            onClick={onClose}
+            type="button"
+          >
             Skip
           </button>
         </div>
@@ -857,7 +917,14 @@ function Preferences({ prefs, setPrefs, onSave, onRun, onInvalid, isDigestLoadin
   function applyProfile(profileName) {
     const profileDefaults = {
       default_ai_reader: {
-        preferred_sources: ["OpenAI News", "OpenAI Blog", "Anthropic News", "Google DeepMind News", "Hugging Face Blog", "TechCrunch AI"],
+        preferred_sources: [
+          "OpenAI News",
+          "OpenAI Blog",
+          "Anthropic News",
+          "Google DeepMind News",
+          "Hugging Face Blog",
+          "TechCrunch AI",
+        ],
         preferred_kinds: ["article", "youtube_video"],
         keywords: ["openai", "anthropic", "agents", "llm", "research", "safety"],
       },
@@ -879,7 +946,9 @@ function Preferences({ prefs, setPrefs, onSave, onRun, onInvalid, isDigestLoadin
     const value = customKeyword.trim().toLowerCase();
     if (!value) return;
     if (!isSafeShortText(value)) {
-      onInvalid("Custom topics can use letters, numbers, spaces, hyphens, dots, apostrophes, slashes, plus signs, and # only.");
+      onInvalid(
+        "Custom topics can use letters, numbers, spaces, hyphens, dots, apostrophes, slashes, plus signs, and # only.",
+      );
       return;
     }
     if (value.length > validationLimits.maxKeywordLength) {
@@ -887,8 +956,13 @@ function Preferences({ prefs, setPrefs, onSave, onRun, onInvalid, isDigestLoadin
       return;
     }
     const existingKeywords = prefs.keywords || [];
-    if (!existingKeywords.includes(value) && existingKeywords.length >= validationLimits.maxKeywords) {
-      onInvalid(`You can add up to ${validationLimits.maxKeywords} topics. Remove one before adding another.`);
+    if (
+      !existingKeywords.includes(value) &&
+      existingKeywords.length >= validationLimits.maxKeywords
+    ) {
+      onInvalid(
+        `You can add up to ${validationLimits.maxKeywords} topics. Remove one before adding another.`,
+      );
       return;
     }
     setPrefs({ ...prefs, keywords: Array.from(new Set([...existingKeywords, value])) });
@@ -896,14 +970,17 @@ function Preferences({ prefs, setPrefs, onSave, onRun, onInvalid, isDigestLoadin
   }
 
   return (
-    <Panel title="Choose what you care about" description="Start from a preset, then tap sources and topics to fine tune the feed.">
+    <Panel
+      title="Choose what you care about"
+      description="Start from a preset, then tap sources and topics to fine tune the feed."
+    >
       <div className="grid md:grid-cols-3 gap-3">
         {profileOptions.map((profile) => (
           <button
             key={profile.id}
             type="button"
             onClick={() => applyProfile(profile.id)}
-          className={`rounded-3xl border p-4 text-left transition-all ${prefs.profile_name === profile.id ? "border-white/55 bg-white/18" : "border-white/15 bg-white/[0.07] hover:bg-white/[0.11]"}`}
+            className={`rounded-3xl border p-4 text-left transition-all ${prefs.profile_name === profile.id ? "border-white/55 bg-white/18" : "border-white/15 bg-white/[0.07] hover:bg-white/[0.11]"}`}
           >
             <h3 className="font-semibold">{profile.title}</h3>
             <p className="mt-2 text-sm leading-6 text-white/55">{profile.text}</p>
@@ -946,7 +1023,13 @@ function Preferences({ prefs, setPrefs, onSave, onRun, onInvalid, isDigestLoadin
                 onChange={(event) => setCustomKeyword(event.target.value)}
                 placeholder="robotics, evals, startups"
               />
-              <button className="rounded-2xl bg-violet-200 px-4 text-sm font-semibold text-[#160f2d]" type="button" onClick={addCustomKeyword}>Add</button>
+              <button
+                className="rounded-2xl bg-violet-200 px-4 text-sm font-semibold text-[#160f2d]"
+                type="button"
+                onClick={addCustomKeyword}
+              >
+                Add
+              </button>
             </div>
           </div>
         </div>
@@ -964,10 +1047,20 @@ function Preferences({ prefs, setPrefs, onSave, onRun, onInvalid, isDigestLoadin
       </div>
 
       <div className="mt-5 rounded-3xl border border-white/15 bg-white/[0.06] p-4">
-        <Toggle label="Use LLM ranking when available" checked={prefs.use_llm} onChange={(use_llm) => setPrefs({ ...prefs, use_llm })} />
+        <Toggle
+          label="Use LLM ranking when available"
+          checked={prefs.use_llm}
+          onChange={(use_llm) => setPrefs({ ...prefs, use_llm })}
+        />
       </div>
       <div className="flex gap-3 mt-6">
-        <button className="rounded-full bg-white text-black px-5 py-3 font-semibold" onClick={onSave} type="button">Save priorities</button>
+        <button
+          className="rounded-full bg-white text-black px-5 py-3 font-semibold"
+          onClick={onSave}
+          type="button"
+        >
+          Save priorities
+        </button>
         <button
           className={`rounded-full border border-white/15 px-5 py-3 font-semibold ${isDigestLoading ? "cursor-wait opacity-60" : ""}`}
           disabled={isDigestLoading}
@@ -1067,7 +1160,10 @@ function PreferenceTable({
 function DigestMaker({ prefs, setPrefs, onRun, digests, isDigestLoading }) {
   return (
     <div className="grid gap-5">
-      <Panel title="Digest making" description="Generate missing digest rows, save them to the database, then rank the saved digests for this user.">
+      <Panel
+        title="Digest making"
+        description="Generate missing digest rows, save them to the database, then rank the saved digests for this user."
+      >
         <div className="grid md:grid-cols-3 gap-4">
           <Field
             label="Last hours"
@@ -1085,7 +1181,11 @@ function DigestMaker({ prefs, setPrefs, onRun, digests, isDigestLoading }) {
             value={prefs.top_n}
             onChange={(top_n) => setPrefs({ ...prefs, top_n: Number(top_n) })}
           />
-          <Toggle label="Use LLM ranking" checked={prefs.use_llm} onChange={(use_llm) => setPrefs({ ...prefs, use_llm })} />
+          <Toggle
+            label="Use LLM ranking"
+            checked={prefs.use_llm}
+            onChange={(use_llm) => setPrefs({ ...prefs, use_llm })}
+          />
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
           <div className="rounded-3xl border border-white/15 bg-white/[0.06] p-4 text-sm leading-6 text-white/65">
@@ -1094,12 +1194,14 @@ function DigestMaker({ prefs, setPrefs, onRun, digests, isDigestLoading }) {
           <Toggle
             label="Create missing digests first"
             checked={prefs.generate_missing_digests !== false}
-            onChange={(generate_missing_digests) => setPrefs({ ...prefs, generate_missing_digests })}
+            onChange={(generate_missing_digests) =>
+              setPrefs({ ...prefs, generate_missing_digests })
+            }
           />
         </div>
         <p className="mt-3 text-sm leading-6 text-white/55">
-          If the LLM fails or hits a limit, the backend saves deterministic fallback digests
-          so the dashboard can still show items.
+          If the LLM fails or hits a limit, the backend saves deterministic fallback digests so the
+          dashboard can still show items.
         </p>
         <button
           className={`mt-5 rounded-full bg-white text-black px-5 py-3 font-semibold ${isDigestLoading ? "cursor-wait opacity-60" : ""}`}
@@ -1119,7 +1221,8 @@ function DigestMaker({ prefs, setPrefs, onRun, digests, isDigestLoading }) {
               </p>
               <h2 className="mt-1 text-2xl font-semibold">Top {digests.total_items} AI updates</h2>
               <p className="mt-2 text-sm leading-6 text-white/55">
-                Ranked with {digests.ranking_method} logic across the last {digests.lookback_hours} hours.
+                Ranked with {digests.ranking_method} logic across the last {digests.lookback_hours}{" "}
+                hours.
                 {digests.digest_generation
                   ? ` Generated ${digests.digest_generation.created_or_updated} new digest rows from ${digests.digest_generation.processed} stored articles.`
                   : ""}
@@ -1130,54 +1233,59 @@ function DigestMaker({ prefs, setPrefs, onRun, digests, isDigestLoading }) {
             </div>
           </div>
           <div className="grid gap-4">
-          {digests.items.map((item) => (
-            <article className="rounded-[28px] border border-white/10 bg-[#111f36]/80 p-5 shadow-xl shadow-black/10" key={item.identity_key}>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-sm font-semibold text-[#07111f]">
-                  {item.rank}
-                </span>
-                <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 font-medium text-cyan-100">
-                  {item.source}
-                </span>
-                <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 font-medium text-emerald-100">
-                  {item.kind.replace("_", " ")}
-                </span>
-                <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-white/60">
-                  {formatDigestDate(item.published_at)}
-                </span>
-                <span className="ml-auto rounded-full border border-white/10 bg-black/20 px-3 py-1 text-white/55">
-                  score {item.score}
-                </span>
-              </div>
-              <h3 className="mt-4 text-xl font-semibold leading-snug text-white">
-                {item.title}
-              </h3>
-              <p className="mt-3 rounded-3xl border border-white/10 bg-black/20 p-4 text-[15px] leading-8 text-white/80">
-                {item.summary}
-              </p>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                  {(item.matched_reasons || []).slice(0, 4).map((reason) => (
-                    <span key={reason} className="rounded-full bg-white/[0.07] px-3 py-1 text-xs text-white/50">
-                      {formatReason(reason)}
-                    </span>
-                  ))}
+            {digests.items.map((item) => (
+              <article
+                className="rounded-[28px] border border-white/10 bg-[#111f36]/80 p-5 shadow-xl shadow-black/10"
+                key={item.identity_key}
+              >
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-sm font-semibold text-[#07111f]">
+                    {item.rank}
+                  </span>
+                  <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 font-medium text-cyan-100">
+                    {item.source}
+                  </span>
+                  <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 font-medium text-emerald-100">
+                    {item.kind.replace("_", " ")}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-white/60">
+                    {formatDigestDate(item.published_at)}
+                  </span>
+                  <span className="ml-auto rounded-full border border-white/10 bg-black/20 px-3 py-1 text-white/55">
+                    score {item.score}
+                  </span>
                 </div>
-                <a
-                  className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#07111f] transition-opacity hover:opacity-90"
-                  href={item.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Read original
-                </a>
-              </div>
-            </article>
-          ))}
+                <h3 className="mt-4 text-xl font-semibold leading-snug text-white">{item.title}</h3>
+                <p className="mt-3 rounded-3xl border border-white/10 bg-black/20 p-4 text-[15px] leading-8 text-white/80">
+                  {item.summary}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    {(item.matched_reasons || []).slice(0, 4).map((reason) => (
+                      <span
+                        key={reason}
+                        className="rounded-full bg-white/[0.07] px-3 py-1 text-xs text-white/50"
+                      >
+                        {formatReason(reason)}
+                      </span>
+                    ))}
+                  </div>
+                  <a
+                    className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#07111f] transition-opacity hover:opacity-90"
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Read original
+                  </a>
+                </div>
+              </article>
+            ))}
           </div>
           {!digests.items.length && (
             <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-white/60">
-              No readable digest rows were available yet. Generate again after the scraper has saved fresh source items.
+              No readable digest rows were available yet. Generate again after the scraper has saved
+              fresh source items.
             </div>
           )}
         </section>
@@ -1188,12 +1296,16 @@ function DigestMaker({ prefs, setPrefs, onRun, digests, isDigestLoading }) {
 
 function Subscription({ user, onCheckout }) {
   return (
-    <Panel title="Subscription" description="Subscribe to receive daily AI digest emails for the last 24 hours.">
+    <Panel
+      title="Subscription"
+      description="Subscribe to receive daily AI digest emails for the last 24 hours."
+    >
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 max-w-xl">
         <Sparkles className="w-8 h-8 mb-4 text-white" />
         <h3 className="text-xl font-semibold">Daily AI digest email</h3>
         <p className="mt-2 text-white/65 leading-7">
-          Stripe Checkout collects payment details securely. In test mode, use fake cards. In setup mode at $0.00, the card is saved without charge.
+          Stripe Checkout collects payment details securely. In test mode, use fake cards. In setup
+          mode at $0.00, the card is saved without charge.
         </p>
         <div className="mt-5 grid gap-2 text-sm text-white/60">
           <div className="flex items-center gap-2">
@@ -1204,7 +1316,13 @@ function Subscription({ user, onCheckout }) {
           </div>
         </div>
         <div className="mt-5 text-sm text-white/60">Account: {user.email}</div>
-        <button className="mt-6 rounded-full bg-white text-black px-6 py-3 font-semibold" onClick={onCheckout} type="button">Try payment</button>
+        <button
+          className="mt-6 rounded-full bg-white text-black px-6 py-3 font-semibold"
+          onClick={onCheckout}
+          type="button"
+        >
+          Try payment
+        </button>
       </div>
     </Panel>
   );
@@ -1213,11 +1331,6 @@ function Subscription({ user, onCheckout }) {
 function ReviewsPanel({ reviews, onSave }) {
   const [rating, setRating] = useState(reviews?.my_review?.rating || 5);
   const [reviewText, setReviewText] = useState(reviews?.my_review?.review_text || "");
-
-  useEffect(() => {
-    setRating(reviews?.my_review?.rating || 5);
-    setReviewText(reviews?.my_review?.review_text || "");
-  }, [reviews]);
 
   return (
     <Panel
@@ -1271,7 +1384,10 @@ function ReviewsPanel({ reviews, onSave }) {
           <div className="mt-4 grid gap-3">
             {(reviews?.reviews || []).length ? (
               reviews.reviews.map((review) => (
-                <div key={review.id} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+                <div
+                  key={review.id}
+                  className="rounded-2xl border border-white/10 bg-white/[0.045] p-4"
+                >
                   <div className="mb-2 flex gap-1 text-yellow-300">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
@@ -1474,39 +1590,15 @@ function Field({ label, value, onChange, type = "text", icon: Icon, min, max, ma
   );
 }
 
-function TextArea({ label, value, onChange }) {
-  return (
-    <label className="grid gap-2 text-sm text-white/60">
-      {label}
-      <textarea
-        className="min-h-[96px] rounded-2xl border border-white/15 bg-white/[0.07] p-3 outline-none text-white"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
-  );
-}
-
-function Select({ label, value, onChange, options }) {
-  return (
-    <label className="grid gap-2 text-sm text-white/60">
-      {label}
-      <select
-        className="rounded-2xl border border-white/15 bg-[#132039] p-3 outline-none text-white"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {options.map(([id, text]) => <option key={id} value={id}>{text}</option>)}
-      </select>
-    </label>
-  );
-}
-
 function Toggle({ label, checked, onChange }) {
   return (
     <label className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/[0.07] p-4 text-sm text-white/80">
       {label}
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
     </label>
   );
 }
@@ -1518,10 +1610,18 @@ function validateDigestPreferences(prefs) {
   const kinds = prefs.preferred_kinds || [];
   const keywords = prefs.keywords || [];
 
-  if (!Number.isInteger(hours) || hours < validationLimits.minHours || hours > validationLimits.maxHours) {
+  if (
+    !Number.isInteger(hours) ||
+    hours < validationLimits.minHours ||
+    hours > validationLimits.maxHours
+  ) {
     return `Please choose a lookback window between ${validationLimits.minHours} and ${validationLimits.maxHours} hours.`;
   }
-  if (!Number.isInteger(topDigests) || topDigests < validationLimits.minTopDigests || topDigests > validationLimits.maxTopDigests) {
+  if (
+    !Number.isInteger(topDigests) ||
+    topDigests < validationLimits.minTopDigests ||
+    topDigests > validationLimits.maxTopDigests
+  ) {
     return `You can request between ${validationLimits.minTopDigests} and ${validationLimits.maxTopDigests} digests at once.`;
   }
   if (!sources.length) {
@@ -1539,10 +1639,16 @@ function validateDigestPreferences(prefs) {
   if (keywords.length > validationLimits.maxKeywords) {
     return `Please keep topic keywords to ${validationLimits.maxKeywords} or fewer.`;
   }
-  if (keywords.some((keyword) => String(keyword).trim().length > validationLimits.maxKeywordLength)) {
+  if (
+    keywords.some((keyword) => String(keyword).trim().length > validationLimits.maxKeywordLength)
+  ) {
     return `Each topic keyword must be ${validationLimits.maxKeywordLength} characters or fewer.`;
   }
-  if ([...sources, ...keywords, ...(prefs.excluded_keywords || [])].some((value) => !isSafeShortText(value))) {
+  if (
+    [...sources, ...keywords, ...(prefs.excluded_keywords || [])].some(
+      (value) => !isSafeShortText(value),
+    )
+  ) {
     return "Sources and keywords can only contain safe text characters. Remove symbols like <, >, quotes, semicolons, or backslashes.";
   }
   if (kinds.some((kind) => !["article", "youtube_video"].includes(kind))) {
@@ -1572,8 +1678,10 @@ function clampInteger(value, fallback, min, max) {
 }
 
 function validateAccountIdentity(user) {
-  if (!user?.name?.trim()) return "Your account name is missing. Please log out and register again.";
-  if (!isValidEmail(user.email)) return "Your account email is invalid. Please use a valid email before checkout.";
+  if (!user?.name?.trim())
+    return "Your account name is missing. Please log out and register again.";
+  if (!isValidEmail(user.email))
+    return "Your account email is invalid. Please use a valid email before checkout.";
   return "";
 }
 
@@ -1730,7 +1838,9 @@ function App() {
     }
 
     const events = ["click", "keydown", "mousemove", "scroll", "touchstart"];
-    events.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }));
+    events.forEach((eventName) =>
+      window.addEventListener(eventName, resetTimer, { passive: true }),
+    );
     document.addEventListener("visibilitychange", handleVisibilityChange);
     resetTimer();
 
@@ -1764,7 +1874,7 @@ function App() {
   }
 
   if (user) {
-    return <Dashboard user={user} token={token} onLogout={logout} onUser={setUser} />;
+    return <Dashboard user={user} token={token} onLogout={logout} />;
   }
 
   return (
@@ -1778,14 +1888,11 @@ function App() {
       />
       <Hero onOpenAuth={openAuth} />
       {infoModal && (
-        <InfoModal
-          type={infoModal}
-          onClose={() => setInfoModal(null)}
-          onOpenAuth={openAuth}
-        />
+        <InfoModal type={infoModal} onClose={() => setInfoModal(null)} onOpenAuth={openAuth} />
       )}
       {authMode && (
         <AuthModal
+          key={authMode}
           mode={authMode}
           initialEmail={initialEmail}
           onClose={() => setAuthMode(null)}
@@ -1814,12 +1921,13 @@ async function api(path, options = {}) {
         `Backend health URL: ${(apiBase || window.location.origin).replace(/\/$/, "")}/api/health`,
         `Browser error: ${err.message}`,
         "Likely causes: wrong VITE_API_BASE_URL, backend is down/asleep, HTTPS/CORS is blocked, or Render CORS_ORIGINS does not include this exact frontend URL.",
-      ].join("\n")
+      ].join("\n"),
+      { cause: err },
     );
   }
 
   const responseText = await response.text();
-  let data = {};
+  let data;
   try {
     data = responseText ? JSON.parse(responseText) : {};
   } catch {
@@ -1836,24 +1944,13 @@ async function api(path, options = {}) {
         responseText && !data.detail ? `Response body: ${responseText.slice(0, 600)}` : null,
       ]
         .filter(Boolean)
-        .join("\n")
+        .join("\n"),
     );
     error.status = response.status;
     error.data = data;
     throw error;
   }
   return data;
-}
-
-function fromCsv(value) {
-  return String(value || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function toCsv(value) {
-  return Array.isArray(value) ? value.join(", ") : "";
 }
 
 createRoot(document.getElementById("root")).render(<App />);

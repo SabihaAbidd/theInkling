@@ -1,6 +1,6 @@
 # The Inkling
 
-The Inkling turns a reader's interests into a daily, newspaper-style edition. This repository is being migrated from an AI-news aggregator to a general-interest personal newspaper.
+The Inkling turns a reader's interests into a daily, newspaper-style edition. Readers can shape a paper around world affairs, politics, society, business, finance, science, health, technology, climate, education, arts, books, film, music, sports, food, travel, and lifestyle. AI remains one optional technology beat, rather than the product's whole editorial scope.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ The Inkling turns a reader's interests into a daily, newspaper-style edition. Th
 - **Persistence:** PostgreSQL stores reader accounts, articles, feedback, and date-keyed edition snapshots.
 - **Agent workflow:** LangChain composes structured editorial calls. LangGraph passes typed shared paper state between ranking, editing, and quality nodes; per-run configuration stays in typed runtime context.
 - **Observability:** LangSmith receives graph traces when configured.
-- **Ingestion:** Topic-tagged RSS/Atom feeds and curated source pages; source fetching has request timeouts.
+- **Ingestion:** A topic-tagged catalog of 224 curated publisher feeds and pages spans journalism, public institutions, research, policy, and specialist AI publications. RSS and Atom are preferred; selected listing pages are a fallback. Source fetches use bounded concurrency, request timeouts, and independent failure handling.
 
 Architecture flow:
 
@@ -28,9 +28,11 @@ rewrites the selected set in one structured model call and keeps publisher links
 intact. If model calls fail, deterministic ranking and publisher summaries
 remain available.
 
-Curated source requests run with a bounded pool of eight concurrent fetches. Each
+Curated source requests run with a bounded pool of eight concurrent fetches and
+select up to 60 feeds for an edition based on the reader's chosen beats. Each
 source has a timeout and can fail independently; successful sources still feed
-the edition, and results retain curated source order.
+the edition, and results retain curated source order. Feed headlines and
+descriptions link back to publishers; the reader does not republish full articles.
 
 ## Start locally
 

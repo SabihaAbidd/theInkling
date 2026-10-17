@@ -46,7 +46,7 @@ def build_edition_task(self, user_id: int, edition_date: str) -> dict:
     try:
         items = collect_curated_news(
             limit_per_source=5,
-            max_sources=min(len(sources), 30),
+            max_sources=min(len(sources), 60),
             sources=sources,
             lookback_hours=48,
         )

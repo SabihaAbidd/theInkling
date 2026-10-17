@@ -27,12 +27,20 @@ import "./index.css";
 const TOKEN_KEY = "asme_token";
 const USER_KEY = "asme_user";
 const TOPIC_GROUPS = [
-  { title: "The world", topics: ["world", "politics", "society", "business", "economy"] },
   {
-    title: "Science and ideas",
-    topics: ["science", "technology", "health", "space", "education", "ai"],
+    title: "The world and public life",
+    topics: ["world", "politics", "society", "education"],
   },
-  { title: "People and planet", topics: ["climate", "environment", "culture", "arts"] },
+  { title: "Business and money", topics: ["business", "economy", "finance"] },
+  {
+    title: "Science and technology",
+    topics: ["science", "technology", "health", "space", "ai"],
+  },
+  {
+    title: "People and planet",
+    topics: ["climate", "environment", "culture", "arts", "books", "film", "music"],
+  },
+  { title: "Life and leisure", topics: ["sports", "food", "travel", "lifestyle"] },
 ];
 
 function savedUser() {

@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, field_validator
 from redis import asyncio as redis
+from sqlalchemy.exc import IntegrityError
 
 from app.database.connection import get_session
 from app.database.models import DailyEdition
@@ -383,22 +384,31 @@ def request_daily_paper(user=Depends(current_user)) -> dict:
     """Queue a date-keyed newspaper build without blocking the API worker."""
 
     edition_date = datetime.now(UTC).date()
-    with get_session() as session:
-        edition = get_daily_edition_for_date(session, user.id, edition_date)
-        if edition and edition.status in {"queued", "running", "ready"}:
-            return _serialize_edition(edition)
+    try:
+        with get_session() as session:
+            edition = get_daily_edition_for_date(session, user.id, edition_date)
+            if edition and edition.status in {"queued", "running", "ready"}:
+                return _serialize_edition(edition)
 
-        job_id = uuid4().hex
-        edition = upsert_daily_edition(
-            session,
-            user_id=user.id,
-            edition_date=edition_date,
-            status="queued",
-            job_id=job_id,
-            title="The Inkling",
-            error_code=None,
-        )
-        edition_id = edition.id
+            job_id = uuid4().hex
+            edition = upsert_daily_edition(
+                session,
+                user_id=user.id,
+                edition_date=edition_date,
+                status="queued",
+                job_id=job_id,
+                title="The Inkling",
+                error_code=None,
+            )
+            edition_id = edition.id
+    except IntegrityError:
+        # The unique reader/date constraint arbitrates requests that arrive
+        # together. Return the winner's queued row instead of failing one caller.
+        with get_session() as session:
+            edition = get_daily_edition_for_date(session, user.id, edition_date)
+            if edition and edition.status in {"queued", "running", "ready"}:
+                return _serialize_edition(edition)
+        raise
 
     try:
         build_edition_task.apply_async(

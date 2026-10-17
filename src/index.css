@@ -1,24 +1,24 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Instrument Serif", Georgia, serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
 }
 
 :root {
   color-scheme: light;
-  --paper: #f0f1eb;
-  --surface: #fffefa;
-  --ink: #252a26;
-  --muted: #747a73;
-  --rule: #c9cec6;
-  --spine: #203b34;
-  --accent: #d26747;
-  --accent-ink: #fffaf4;
-  --leaf: #537261;
-  --danger: #a43d32;
-  --focus: #245c9b;
+  --paper: #eae3de;
+  --surface: #f8f5f1;
+  --ink: #175a67;
+  --muted: #52777b;
+  --rule: #175a6738;
+  --spine: #175a67;
+  --accent: #175a67;
+  --accent-ink: #eae3de;
+  --leaf: #2a707c;
+  --danger: #9c493f;
+  --focus: #0f454f;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -26,7 +26,7 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-12: 3rem;
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
   color: var(--ink);
   background: var(--paper);
   font-synthesis: none;
@@ -2311,4 +2311,154 @@ input:focus-visible {
   .landing-hero {
     background-size: 100% auto;
   }
+}
+
+/* Carry the landing-page palette and type through every reader screen. */
+.reader-shell,
+.auth-page {
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Poppins", "Helvetica Neue", Arial, sans-serif;
+}
+.reader-spine {
+  color: var(--ink);
+  background: var(--paper);
+  border-right: 1px solid var(--rule);
+}
+.reader-spine .brand-symbol {
+  border-color: #175a6760;
+  color: var(--ink);
+}
+.reader-spine .brand-word,
+.mobile-brand .brand-word {
+  color: var(--ink);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 500;
+}
+.reader-spine .brand-period,
+.mobile-brand .brand-period {
+  color: #2a707c;
+}
+.spine-note,
+.spine-footer,
+.reader-name,
+.spine-signout {
+  color: var(--muted);
+}
+.spine-bottom {
+  border-color: var(--rule);
+}
+.reader-avatar {
+  color: var(--accent-ink);
+  background: var(--ink);
+}
+.primary-nav .nav-item {
+  color: var(--muted);
+}
+.primary-nav .nav-item:hover {
+  color: var(--ink);
+  background: #175a670d;
+}
+.primary-nav .nav-item.is-active {
+  color: var(--ink);
+  background: #d4e0d5;
+  border-color: #175a6730;
+}
+.primary-nav .nav-item.is-active svg,
+.mobile-nav .nav-item.is-active svg {
+  color: var(--accent);
+}
+.paper-topbar {
+  background: var(--paper);
+}
+.topbar-date,
+.page-heading-row h1,
+.lead-headline,
+.auth-intro h1 {
+  color: var(--ink);
+}
+.button-primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+.button-primary:hover:not(:disabled) {
+  background: #0f454f;
+}
+.button-outline {
+  color: var(--ink);
+  border-color: #175a6750;
+}
+.button-outline:hover:not(:disabled) {
+  background: #175a670d;
+  border-color: var(--ink);
+}
+.issue-stamp svg,
+.lead-dot {
+  color: var(--accent);
+}
+.edition-note {
+  background: #f3eeea;
+}
+.note-icon {
+  border-color: #175a6740;
+  color: var(--leaf);
+}
+.quiet-action:hover:not(:disabled) {
+  color: var(--ink);
+  background: #175a670d;
+}
+.story-card h3 a:hover,
+.text-link,
+.text-link:hover,
+.archive-date span,
+.auth-switch button,
+.password-control button {
+  color: var(--ink);
+}
+.topic-option {
+  color: var(--ink);
+  border-color: #175a6740;
+  background: var(--surface);
+}
+.topic-option:hover,
+.topic-option.is-selected {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: #d4e0d5;
+}
+.topic-option input,
+.switch-row input {
+  accent-color: var(--ink);
+}
+.mobile-nav {
+  background: var(--paper);
+}
+.mobile-nav .nav-item.is-active {
+  color: var(--ink);
+}
+.mobile-nav .nav-item.is-active svg {
+  color: var(--ink);
+}
+.auth-panel {
+  border-top-color: var(--ink);
+}
+.auth-switch button {
+  color: var(--ink);
+}
+.reader-shell
+  :is(
+    .topbar-kicker,
+    .topbar-date,
+    .lead-summary,
+    .story-overline,
+    .story-card > p,
+    .archive-intro > p:last-child,
+    .archive-edition-copy > p:last-child,
+    .topics-intro > p,
+    .editorial-controls p,
+    .topic-save-row > p,
+    .edition-note > span
+  ),
+.auth-page :is(.auth-top-note, .auth-intro > p, .auth-proof) {
+  color: var(--muted);
 }

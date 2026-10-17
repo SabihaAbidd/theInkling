@@ -10,6 +10,7 @@ from app.database.connection import get_session
 from app.database.models import User
 from app.database.repository import (
     get_daily_edition_for_date,
+    list_reader_feedback,
     upsert_daily_edition,
     upsert_news_items,
 )
@@ -72,6 +73,7 @@ def build_edition_task(self, user_id: int, edition_date: str) -> dict:
             if reader is None:
                 raise RuntimeError("reader_not_found")
             reader_preferences = reader.preferences or {}
+            feedback_examples = list_reader_feedback(session, user_id, limit=100)
 
             graph_result = create_edition(
                 reader_profile={
@@ -85,6 +87,7 @@ def build_edition_task(self, user_id: int, edition_date: str) -> dict:
                     ),
                 },
                 articles=candidates,
+                feedback_examples=feedback_examples,
                 model_name=reader_preferences.get("model_name", ""),
                 llm_enabled=reader_preferences.get("use_llm", True),
                 max_articles=min(max(int(reader_preferences.get("top_n", 10)), 1), 20),

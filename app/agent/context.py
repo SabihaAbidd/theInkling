@@ -29,11 +29,21 @@ class ReaderProfile(TypedDict, total=False):
     preferred_sources: list[str]
 
 
+class FeedbackRecord(TypedDict, total=False):
+    """An anonymized article-level signal used during a single graph run."""
+
+    action: str
+    dwell_seconds: int | None
+    title: str
+    summary: str
+
+
 class PaperState(TypedDict, total=False):
     """Canonical shared state; agents communicate through these fields."""
 
     reader_profile: ReaderProfile
     articles: list[ArticleRecord]
+    feedback_examples: list[FeedbackRecord]
     ranked_articles: list[ArticleRecord]
     paper_articles: list[ArticleRecord]
     issues: list[str]

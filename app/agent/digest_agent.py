@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from dotenv import load_dotenv
+from langchain_core.prompts import ChatPromptTemplate
+from pydantic import BaseModel, Field
 
-from app.agent.llm_client import default_model, default_provider, generate_json
+from app.agent.llm_client import default_model, default_provider
+from app.agent.model_provider import create_chat_model
 from app.database.models import NewsItem
-
-load_dotenv()
 
 DEFAULT_DIGEST_MODEL = default_model(default_provider())
 
@@ -21,6 +21,18 @@ Write a concise, factual title and a two to three sentence summary.
 Prefer concrete details from the source item. Do not invent facts.
 If the source item is weak or navigation-like, summarize only what is clearly present.
 """
+
+
+class DigestOutput(BaseModel):
+    """Validated summary generated from one source item."""
+
+    title: str = Field(min_length=1, max_length=180)
+    summary: str = Field(min_length=1, max_length=900)
+
+
+DIGEST_PROMPT = ChatPromptTemplate.from_messages(
+    [("system", DIGEST_INSTRUCTIONS), ("human", "Source item:\n{article}")]
+)
 
 
 @dataclass(frozen=True)
@@ -35,7 +47,7 @@ class DigestAgentResult:
 
 
 class DigestAgent:
-    """Creates short structured digest entries with the configured LLM API."""
+    """Creates short structured digest entries through LangChain."""
 
     def __init__(
         self,
@@ -48,35 +60,19 @@ class DigestAgent:
     def summarize_news_item(self, news_item: NewsItem) -> DigestAgentResult:
         """Generate one digest entry for a database news item."""
 
-        schema = {
-            "type": "object",
-            "properties": {
-                "title": {
-                    "type": "string",
-                    "description": "A concise digest title for this item.",
-                },
-                "summary": {
-                    "type": "string",
-                    "description": "A factual two to three sentence summary.",
-                },
-            },
-            "required": ["title", "summary"],
-        }
-        payload, raw_response, response_id, model = generate_json(
-            system_instruction=DIGEST_INSTRUCTIONS,
-            user_prompt=build_digest_input(news_item),
-            schema=schema,
-            model=self.model,
-            api_key=self.api_key,
-            max_output_tokens=300,
-            temperature=0,
+        model = create_chat_model(self.model, self.api_key)
+        chain = (
+            DIGEST_PROMPT | model.with_structured_output(DigestOutput)
+        ).with_config(
+            {"run_name": "article_digest_editor", "tags": ["the-inkling", "digest"]}
         )
+        payload = chain.invoke({"article": build_digest_input(news_item)})
         return DigestAgentResult(
-            title=payload["title"].strip(),
-            summary=payload["summary"].strip(),
-            model=model,
-            response_id=response_id,
-            raw_response=raw_response,
+            title=payload.title.strip(),
+            summary=payload.summary.strip(),
+            model=self.model,
+            response_id=None,
+            raw_response=payload.model_dump(mode="json"),
         )
 
 

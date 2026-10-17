@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from dotenv import load_dotenv
+from langchain_core.prompts import ChatPromptTemplate
+from pydantic import BaseModel, Field
 
-from app.agent.llm_client import default_model, default_provider, generate_json
+from app.agent.llm_client import default_model, default_provider
+from app.agent.model_provider import create_chat_model
 from app.profiles.user_profile import UserProfile
-
-load_dotenv()
 
 DEFAULT_RANKING_MODEL = default_model(default_provider())
 
@@ -24,6 +24,28 @@ Return every candidate exactly once.
 Use deterministic, consistent scoring from 0 to 100.
 Do not invent facts. Base reasons only on the provided candidate text and profile.
 """
+
+RANKING_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", RANKING_INSTRUCTIONS),
+        ("human", "Rank this profile against these candidates:\n{ranking_input}"),
+    ]
+)
+
+
+class RankedItemsOutput(BaseModel):
+    """Validated ordering and relevance notes for article candidates."""
+
+    ranked_items: list["RankedItemOutput"] = Field(min_length=0)
+
+
+class RankedItemOutput(BaseModel):
+    """One article's position and reader relevance."""
+
+    digest_id: int
+    rank: int = Field(ge=1)
+    relevance_score: int = Field(ge=0, le=100)
+    reason: str = Field(max_length=300)
 
 
 @dataclass(frozen=True)
@@ -57,44 +79,22 @@ class RankingAgent:
         if not candidates:
             return []
 
-        schema = {
-            "type": "object",
-            "properties": {
-                "ranked_items": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "digest_id": {"type": "integer"},
-                            "rank": {"type": "integer"},
-                            "relevance_score": {"type": "integer"},
-                            "reason": {"type": "string"},
-                        },
-                        "required": [
-                            "digest_id",
-                            "rank",
-                            "relevance_score",
-                            "reason",
-                        ],
+        model = create_chat_model(self.model, self.api_key)
+        chain = (
+            RANKING_PROMPT | model.with_structured_output(RankedItemsOutput)
+        ).with_config(
+            {"run_name": "reader_relevance_ranker", "tags": ["the-inkling", "ranking"]}
+        )
+        data = chain.invoke(
+            {
+                "ranking_input": json.dumps(
+                    {
+                        "profile": profile_to_payload(profile),
+                        "candidates": candidates,
                     },
-                },
-            },
-            "required": ["ranked_items"],
-        }
-        data, _, _, _ = generate_json(
-            system_instruction=RANKING_INSTRUCTIONS,
-            user_prompt=json.dumps(
-                {
-                    "profile": profile_to_payload(profile),
-                    "candidates": candidates,
-                },
-                ensure_ascii=False,
-            ),
-            schema=schema,
-            model=self.model,
-            api_key=self.api_key,
-            max_output_tokens=2048,
-            temperature=0,
+                    ensure_ascii=False,
+                )
+            }
         )
         return [
             LLMRankedItem(
@@ -103,7 +103,7 @@ class RankingAgent:
                 relevance_score=int(item["relevance_score"]),
                 reason=str(item["reason"]),
             )
-            for item in data["ranked_items"]
+            for item in data.ranked_items
         ]
 
 

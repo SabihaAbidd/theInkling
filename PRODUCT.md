@@ -28,7 +28,8 @@ The Inkling creates a personal, general-interest newspaper from a reader's selec
 ## Current delivery state
 
 - Shipped foundation: authenticated accounts, topic-tagged feeds, a typed LangGraph edition workflow, persistent editions and feedback, Celery/Redis edition jobs, rate limits, and LangSmith configuration.
-- In progress: hybrid semantic personalization, PDF editions, reader onboarding and archive UI, and retiring legacy aggregator flows.
+- Shipped: reader onboarding, topic and feedback ranking, a LangChain model reranker, grounded batch editing, and the daily/archived web reader.
+- In progress: downloadable PDF editions and retiring legacy aggregator flows.
 
 ## Acceptance criteria
 

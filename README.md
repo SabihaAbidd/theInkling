@@ -17,8 +17,15 @@ Architecture flow:
     Reader -> React reader -> FastAPI -> PostgreSQL
                              -> Redis queue -> Celery worker
     Celery worker -> curated RSS sources -> LangGraph paper state
-    LangGraph -> personalization ranker -> LangChain editor -> quality checks
-    LangGraph traces -> LangSmith
+    LangGraph -> topic/feedback ranker -> LangChain semantic reranker
+             -> LangChain grounded editor -> quality checks
+    LangGraph traces -> LangSmith (when enabled; reader identity is excluded)
+
+The ranker learns from saved, skipped, and longer-read stories. It combines
+transparent topic and feedback signals with a bounded model rerank of up to 30
+candidate stories. The editor rewrites the selected set in one structured model
+call and keeps publisher links intact. If model calls fail, deterministic ranking
+and publisher summaries remain available.
 
 ## Start locally
 

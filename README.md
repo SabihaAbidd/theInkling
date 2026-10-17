@@ -77,6 +77,7 @@ Authenticated routes include:
 - POST /api/papers to queue today's edition
 - GET /api/papers/today to poll its status and read it when ready
 - GET /api/papers and GET /api/papers/{edition_id} for archive and reading
+- GET /api/papers/{edition_id}/pdf for an authenticated PDF download with publisher links
 - POST /api/papers/{edition_id}/feedback for opened, saved, skipped, and dismissed signals
 
 Edition generation is keyed by reader and UTC date, returns immediately after queuing, and records a durable snapshot for the archive.

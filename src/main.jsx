@@ -9,6 +9,7 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
+  Download,
   ExternalLink,
   Leaf,
   LoaderCircle,
@@ -329,6 +330,7 @@ function ReaderApp({ user, token, onSignOut }) {
   const [pagePending, setPagePending] = useState(false);
   const [todayPending, setTodayPending] = useState(true);
   const [savePending, setSavePending] = useState(false);
+  const [pdfPending, setPdfPending] = useState(false);
   const [pageError, setPageError] = useState("");
   const [banner, setBanner] = useState(null);
   const [retryFeedback, setRetryFeedback] = useState(null);
@@ -469,6 +471,28 @@ function ReaderApp({ user, token, onSignOut }) {
       setPageError(error.message);
     } finally {
       setPagePending(false);
+    }
+  }
+
+  async function downloadPaperPdf(edition) {
+    if (!edition?.id || pdfPending) return;
+    setPdfPending(true);
+    setBanner(null);
+    try {
+      const file = await apiBlob(`/api/papers/${edition.id}/pdf`, token);
+      const objectUrl = window.URL.createObjectURL(file);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `the-inkling-${edition.date}.pdf`;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
+      setBanner({ tone: "success", text: "Your edition PDF is ready." });
+    } catch (error) {
+      setBanner({ tone: "error", text: error.message });
+    } finally {
+      setPdfPending(false);
     }
   }
 
@@ -659,6 +683,8 @@ function ReaderApp({ user, token, onSignOut }) {
               onCreate={createPaper}
               onOpenOriginal={openOriginal}
               onFeedback={submitFeedback}
+              onDownload={downloadPaperPdf}
+              downloadPending={pdfPending}
               savedIds={savedIds}
               hiddenIds={hiddenIds}
             />
@@ -711,6 +737,8 @@ function TodayPage({
   onCreate,
   onOpenOriginal,
   onFeedback,
+  onDownload,
+  downloadPending,
   savedIds,
   hiddenIds,
 }) {
@@ -806,6 +834,16 @@ function TodayPage({
           <span>YOUR MORNING EDITION</span>
         </span>
         <span className="edition-date">{formatDateOnly(edition.date)}</span>
+        <button
+          className="button button-outline download-button"
+          type="button"
+          onClick={() => onDownload(edition)}
+          disabled={downloadPending}
+          aria-label="Download this newspaper edition as a PDF"
+        >
+          {downloadPending ? <LoaderCircle className="spin" size={15} /> : <Download size={15} />}
+          {downloadPending ? "Preparing PDF" : "Download PDF"}
+        </button>
         <button
           className="button button-outline print-button"
           type="button"
@@ -1258,6 +1296,27 @@ async function api(path, options = {}) {
     throw error;
   }
   return result;
+}
+
+async function apiBlob(path, token) {
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+  let response;
+  try {
+    response = await fetch(apiBase + path, {
+      headers: { Accept: "application/pdf", Authorization: "Bearer " + token },
+    });
+  } catch {
+    throw new Error("The service could not be reached. Check your connection and try again.");
+  }
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    let message = formatMessage(result.detail);
+    if (response.status === 429) message = "Too many attempts. Please wait a moment and try again.";
+    if (response.status >= 500)
+      message = "The service is having trouble. Please try again shortly.";
+    throw new Error(message);
+  }
+  return response.blob();
 }
 
 createRoot(document.getElementById("root")).render(<App />);

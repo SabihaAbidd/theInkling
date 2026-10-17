@@ -1298,6 +1298,27 @@ input:focus-visible {
   .paper-content {
     padding: 30px 18px 40px;
   }
+  .edition-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 10px 14px;
+  }
+  .edition-date {
+    margin-right: 0;
+    justify-self: end;
+  }
+  .edition-meta .button {
+    min-height: 34px;
+    padding: 0 9px;
+    font-size: 10px;
+  }
+  .download-button {
+    grid-column: 1;
+  }
+  .print-button {
+    grid-column: 2;
+  }
   .page-heading-row {
     min-height: 70px;
     margin-bottom: 19px;
@@ -1521,6 +1542,7 @@ input:focus-visible {
   .paper-footer,
   .mobile-nav,
   .notice,
+  .download-button,
   .print-button,
   .article-actions,
   .story-card-actions {

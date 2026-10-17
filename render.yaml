@@ -1,10 +1,29 @@
 services:
   - type: web
-    name: ai-news-aggregator-api
+    name: the-inkling-api
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install pipenv==2026.10.0 && pipenv sync --system
     startCommand: python -m app.render_start
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.13.0
+        value: 3.12.13
+      - key: AUTH_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LANGSMITH_API_KEY
+        sync: false
+      - key: LANGSMITH_TRACING
+        value: "true"
+      - key: LANGSMITH_PROJECT
+        value: the-inkling

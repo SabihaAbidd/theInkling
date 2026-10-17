@@ -1,21 +1,9 @@
-"""Create database tables for the AI news aggregator."""
+"""Compatibility helpers for upgrading legacy user tables."""
 
 from __future__ import annotations
 
 from sqlalchemy import inspect, text
-
-from .connection import Base, engine
-from .models import (  # noqa: F401
-    DailyEdition,
-    DigestItem,
-    NewsItem,
-    PaymentSubscription,
-    PaymentTransaction,
-    ReaderFeedback,
-    SiteReview,
-    SourceRun,
-    User,
-)
+from sqlalchemy.engine import Connection, Engine
 
 USER_COLUMN_DEFINITIONS = {
     "password_hash": "TEXT",
@@ -27,17 +15,10 @@ USER_COLUMN_DEFINITIONS = {
 }
 
 
-def create_tables() -> None:
-    """Create all SQLAlchemy tables."""
+def ensure_user_columns(bind: Engine | Connection) -> None:
+    """Add account fields missing from databases created by the old app."""
 
-    Base.metadata.create_all(bind=engine)
-    ensure_user_columns()
-
-
-def ensure_user_columns() -> None:
-    """Add new account columns when upgrading an existing local database."""
-
-    inspector = inspect(engine)
+    inspector = inspect(bind)
     if "users" not in inspector.get_table_names():
         return
 
@@ -50,13 +31,14 @@ def ensure_user_columns() -> None:
     if not missing_columns:
         return
 
-    with engine.begin() as connection:
+    def add_columns(connection: Connection) -> None:
         for name, definition in missing_columns:
             connection.execute(
                 text(f"ALTER TABLE users ADD COLUMN {name} {definition}")
             )
 
-
-if __name__ == "__main__":
-    create_tables()
-    print("Database tables created.")
+    if isinstance(bind, Connection):
+        add_columns(bind)
+    else:
+        with bind.begin() as connection:
+            add_columns(connection)

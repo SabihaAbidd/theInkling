@@ -43,9 +43,9 @@ the edition, and results retain curated source order.
 
 3. Open the reader at http://localhost:5173. The API and interactive API docs are at http://localhost:8000 and http://localhost:8000/docs.
 
-The Compose stack includes PostgreSQL, Redis, the API, the Celery worker, and the Vite development server. First startup installs frontend dependencies and creates the database tables.
+The Compose stack includes PostgreSQL, Redis, the API, the Celery worker, and the Vite development server. The API runs Alembic migrations before serving requests, and the worker waits for the API health check.
 
-`render.yaml` defines the API service only. It uses the Pipenv lockfile and Python 3.12; configure reachable PostgreSQL and Redis URLs, exact frontend origins in `CORS_ORIGINS`, and deploy the Vite client separately. The Blueprint generates `AUTH_SECRET_KEY` and prompts for provider credentials without storing secret values in Git.
+`render.yaml` defines the API and Celery worker. Both use the Pipenv lockfile and Python 3.12; configure reachable PostgreSQL and Redis URLs, exact frontend origins in `CORS_ORIGINS`, and deploy the Vite client separately. The Blueprint generates `AUTH_SECRET_KEY` and prompts for provider credentials without storing secret values in Git. Render does not offer a free background worker plan, so its worker service uses the smallest paid plan.
 
 ### Run API and frontend outside Docker
 
@@ -54,8 +54,9 @@ Run PostgreSQL and Redis, then install dependencies from the repository root:
     python -m pipenv sync
     npm install
 
-Start the API and worker in separate terminals:
+Run database migrations, then start the API and worker in separate terminals:
 
+    pipenv run alembic upgrade head
     pipenv run uvicorn app.web:app --reload --port 8000
     pipenv run celery -A app.worker.celery_app worker --loglevel=INFO
     npm run dev
@@ -93,6 +94,7 @@ Edition generation is keyed by reader and UTC date, returns immediately after qu
 
     pipenv run lint
     pipenv run format
+    pipenv run migrate
     pipenv run ruff check app tests
     pipenv run ruff format --check app tests
     python -m unittest discover -s tests -v

@@ -96,22 +96,6 @@ def redis_rate_limit(times: int, seconds: int, scope: str):
 
 
 @app.on_event("startup")
-def initialize_database() -> None:
-    """Create required tables when a new hosted database is attached."""
-
-    if os.getenv("AUTO_CREATE_TABLES", "true").strip().lower() not in {
-        "1",
-        "true",
-        "yes",
-    }:
-        return
-
-    from app.database.create_tables import create_tables
-
-    create_tables()
-
-
-@app.on_event("startup")
 async def initialize_rate_limiting() -> None:
     """Initialize shared Redis-backed request limits for web instances."""
 

@@ -1,10 +1,10 @@
 services:
   - type: web
     name: the-inkling-api
-    env: python
+    runtime: python
     plan: free
     buildCommand: pip install pipenv==2026.10.0 && pipenv sync --system
-    startCommand: python -m app.render_start
+    startCommand: alembic upgrade head && python -m app.render_start
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
@@ -18,6 +18,27 @@ services:
       - key: CORS_ORIGINS
         sync: false
       - key: FRONTEND_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LANGSMITH_API_KEY
+        sync: false
+      - key: LANGSMITH_TRACING
+        value: "true"
+      - key: LANGSMITH_PROJECT
+        value: the-inkling
+  - type: worker
+    name: the-inkling-worker
+    runtime: python
+    plan: 0.5c-512mb
+    buildCommand: pip install pipenv==2026.10.0 && pipenv sync --system
+    startCommand: celery -A app.worker.celery_app worker --loglevel=INFO
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.13
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
         sync: false
       - key: GROQ_API_KEY
         sync: false

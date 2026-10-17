@@ -13,5 +13,7 @@ COPY Pipfile Pipfile.lock ./
 RUN pipenv sync
 
 COPY app ./app
+COPY alembic.ini ./alembic.ini
+COPY migrations ./migrations
 
 EXPOSE 8000

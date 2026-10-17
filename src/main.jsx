@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Archive,
+  ArrowRight,
   ArrowDownRight,
   ArrowUpRight,
   Bookmark,
@@ -56,6 +57,7 @@ function App() {
   const [user, setUser] = useState(savedUser);
   const [checking, setChecking] = useState(Boolean(token));
   const [sessionMessage, setSessionMessage] = useState("");
+  const [authMode, setAuthMode] = useState("");
 
   useEffect(() => {
     if (!token) return undefined;
@@ -109,11 +111,22 @@ function App() {
     );
   if (user && token) return <ReaderApp user={user} token={token} onSignOut={signOut} />;
 
-  return <AuthScreen message={sessionMessage} onAuth={finishAuth} />;
+  if (!authMode && !sessionMessage) {
+    return <InklingLanding onOpenAuth={setAuthMode} />;
+  }
+
+  return (
+    <AuthScreen
+      message={sessionMessage}
+      initialMode={authMode}
+      onBack={() => setAuthMode("")}
+      onAuth={finishAuth}
+    />
+  );
 }
 
-function AuthScreen({ message, onAuth }) {
-  const [isRegister, setIsRegister] = useState(false);
+function AuthScreen({ message, initialMode, onBack, onAuth }) {
+  const [isRegister, setIsRegister] = useState(initialMode === "register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -183,8 +196,17 @@ function AuthScreen({ message, onAuth }) {
   return (
     <main className="auth-page">
       <div className="auth-topline">
-        <BrandMark />
-        <span className="auth-top-note">A daily paper, made for you</span>
+        <button
+          className="plain-brand-button"
+          type="button"
+          onClick={onBack}
+          aria-label="Back to The Inkling home"
+        >
+          <BrandMark />
+        </button>
+        <button className="auth-top-note auth-back" type="button" onClick={onBack}>
+          Back to The Inkling
+        </button>
       </div>
       <div className="auth-layout">
         <section className="auth-intro">
@@ -192,10 +214,10 @@ function AuthScreen({ message, onAuth }) {
             <Sun size={14} />
             <span>YOUR MORNING EDITION</span>
           </div>
-          <h1>A clearer start to the day.</h1>
+          <h1>Your world, thoughtfully gathered.</h1>
           <p>
-            Choose what matters to you. The Inkling brings together a personal selection of
-            reporting, research, and ideas from around the world.
+            The Inkling turns reporting, research, and ideas from trusted publishers into a personal
+            daily paper shaped around what matters to you.
           </p>
           <div className="auth-proof">
             <span>
@@ -313,6 +335,281 @@ function AuthScreen({ message, onAuth }) {
       <footer className="auth-footer">Independent sources. A more considered morning.</footer>
     </main>
   );
+}
+
+function InklingLanding({ onOpenAuth }) {
+  const topicNames = [
+    "World",
+    "Business",
+    "Science",
+    "Technology",
+    "Health",
+    "Climate",
+    "Culture",
+    "Sports",
+  ];
+  return (
+    <main className="landing-page">
+      <header className="landing-nav">
+        <a className="landing-brand" href="#home" aria-label="The Inkling home">
+          <BrandMark />
+        </a>
+        <nav aria-label="About The Inkling">
+          <a href="#how-it-works">How it works</a>
+          <a href="#topics">Topics</a>
+          <a href="#sources">Our sources</a>
+        </nav>
+        <div className="landing-nav-actions">
+          <button className="landing-signin" type="button" onClick={() => onOpenAuth("login")}>
+            Sign in
+          </button>
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={() => onOpenAuth("register")}
+          >
+            Make it yours <ArrowRight size={15} />
+          </button>
+        </div>
+      </header>
+
+      <section className="landing-hero" id="home">
+        <div className="landing-hero-copy">
+          <p className="issue-stamp">
+            <Sun size={14} /> YOUR DAILY PAPER, REIMAGINED
+          </p>
+          <h1>
+            More signal.
+            <br />
+            <em>Less noise.</em>
+          </h1>
+          <p className="landing-lede">
+            A calmer way to keep up. The Inkling gathers reporting and research from around the
+            world, then shapes a daily edition around your interests.
+          </p>
+          <div className="landing-hero-actions">
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={() => onOpenAuth("register")}
+            >
+              Build my paper <ArrowRight size={16} />
+            </button>
+            <a className="landing-text-link" href="#how-it-works">
+              See how it works <ArrowDownRight size={16} />
+            </a>
+          </div>
+          <div className="landing-trust">
+            <span>
+              <Leaf size={15} /> Your topics, your pace
+            </span>
+            <span>
+              <ExternalLink size={15} /> Always linked to the publisher
+            </span>
+          </div>
+        </div>
+        <div
+          className="landing-art"
+          aria-label="Illustration of birds flying over a quiet landscape"
+        >
+          <InklingCanvas />
+          <div className="art-caption">
+            <span>THE MORNING, IN PERSPECTIVE</span>
+            <span>01 — 23</span>
+          </div>
+        </div>
+        <a className="landing-scroll" href="#how-it-works">
+          SCROLL TO EXPLORE <span>↓</span>
+        </a>
+      </section>
+
+      <section className="landing-intro" id="how-it-works">
+        <p className="eyebrow">A BETTER WAY TO BEGIN</p>
+        <h2>
+          Read widely. <em>Stay grounded.</em>
+        </h2>
+        <p>
+          One personal edition brings the day's reporting into focus—without losing the voices and
+          sources behind it.
+        </p>
+      </section>
+      <section className="landing-steps" aria-label="How The Inkling works">
+        <article>
+          <span className="step-number">01</span>
+          <h3>Choose what matters</h3>
+          <p>
+            Shape your paper around subjects you care about, from public life and business to
+            science, culture, and the natural world.
+          </p>
+        </article>
+        <article>
+          <span className="step-number">02</span>
+          <h3>We gather the day</h3>
+          <p>
+            Stories are collected from a broad, curated network of publishers, public broadcasters,
+            research institutions, and specialist outlets.
+          </p>
+        </article>
+        <article>
+          <span className="step-number">03</span>
+          <h3>Read at your pace</h3>
+          <p>
+            Open a focused edition, save stories for later, and return to past papers in your
+            personal archive.
+          </p>
+        </article>
+      </section>
+      <section className="landing-topics" id="topics">
+        <div>
+          <p className="eyebrow">A WORLD OF CURIOSITY</p>
+          <h2>
+            Follow the stories
+            <br />
+            that move you.
+          </h2>
+        </div>
+        <div className="landing-topic-list">
+          {topicNames.map((topic) => (
+            <span key={topic}>{topic}</span>
+          ))}
+        </div>
+      </section>
+      <section className="landing-sources" id="sources">
+        <div className="source-orbit" aria-hidden="true">
+          <span>
+            THE
+            <br />
+            INKLING
+          </span>
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className="sources-copy">
+          <p className="eyebrow">INDEPENDENT BY DESIGN</p>
+          <h2>
+            Follow the source.
+            <br />
+            <em>Keep the context.</em>
+          </h2>
+          <p>
+            Our curated catalogue spans 224 sources across 23 topics. Each story points back to its
+            original publisher, so you can read beyond the summary and explore different
+            perspectives.
+          </p>
+          <button
+            className="landing-text-link"
+            type="button"
+            onClick={() => onOpenAuth("register")}
+          >
+            Create your edition <ArrowRight size={16} />
+          </button>
+        </div>
+      </section>
+      <footer className="landing-footer">
+        <a className="landing-brand" href="#home">
+          <BrandMark />
+        </a>
+        <span>Independent sources. A more considered morning.</span>
+        <button type="button" onClick={() => onOpenAuth("login")}>
+          Reader sign in <ArrowRight size={15} />
+        </button>
+      </footer>
+    </main>
+  );
+}
+
+function InklingCanvas() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return undefined;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let animation = 0;
+    const draw = (time = 0) => {
+      const bounds = canvas.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+      const pixelWidth = Math.round(bounds.width * scale);
+      const pixelHeight = Math.round(bounds.height * scale);
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+      }
+      context.setTransform(scale, 0, 0, scale, 0, 0);
+      const width = bounds.width;
+      const height = bounds.height;
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = "#e9e3d9";
+      context.fillRect(0, 0, width, height);
+      context.strokeStyle = "rgba(23,90,103,.16)";
+      context.lineWidth = 1;
+      for (let x = 0; x < width; x += 26) {
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x, height);
+        context.stroke();
+      }
+      context.fillStyle = "#c9d7ce";
+      context.beginPath();
+      context.moveTo(0, height * 0.69);
+      context.quadraticCurveTo(width * 0.24, height * 0.48, width * 0.48, height * 0.7);
+      context.quadraticCurveTo(width * 0.73, height * 0.91, width, height * 0.56);
+      context.lineTo(width, height);
+      context.lineTo(0, height);
+      context.fill();
+      context.fillStyle = "#8eaaa0";
+      context.beginPath();
+      context.moveTo(0, height * 0.82);
+      context.quadraticCurveTo(width * 0.28, height * 0.62, width * 0.58, height * 0.82);
+      context.quadraticCurveTo(width * 0.78, height * 0.96, width, height * 0.74);
+      context.lineTo(width, height);
+      context.lineTo(0, height);
+      context.fill();
+      context.fillStyle = "rgba(244,240,231,.78)";
+      context.beginPath();
+      context.moveTo(0, height * 0.78);
+      context.quadraticCurveTo(width * 0.5, height * 0.7, width, height * 0.82);
+      context.lineTo(width, height);
+      context.lineTo(0, height);
+      context.fill();
+      const elapsed = reduceMotion ? 0 : time / 1000;
+      const birds = [
+        { x: 0.59, y: 0.27, size: 1 },
+        { x: 0.77, y: 0.37, size: 0.68 },
+        { x: 0.43, y: 0.4, size: 0.48 },
+      ];
+      context.strokeStyle = "#175a67";
+      context.lineWidth = 2;
+      context.lineCap = "round";
+      for (const bird of birds) {
+        const x = width * bird.x + Math.sin(elapsed * 0.32 + bird.y * 12) * 9;
+        const y = height * bird.y + Math.sin(elapsed * 1.2 + bird.x * 9) * 4;
+        const wing = Math.sin(elapsed * 2.5 + bird.x * 10) * 5;
+        context.save();
+        context.translate(x, y);
+        context.scale(bird.size, bird.size);
+        context.beginPath();
+        context.moveTo(-15, 0);
+        context.quadraticCurveTo(-8, -12 - wing, 0, 0);
+        context.quadraticCurveTo(8, -11 + wing, 16, 1);
+        context.stroke();
+        context.restore();
+      }
+      if (!reduceMotion) animation = window.requestAnimationFrame(draw);
+    };
+    draw();
+    const resize = new ResizeObserver(() => {
+      window.cancelAnimationFrame(animation);
+      draw();
+    });
+    resize.observe(canvas);
+    return () => {
+      window.cancelAnimationFrame(animation);
+      resize.disconnect();
+    };
+  }, []);
+  return <canvas ref={canvasRef} className="inkling-canvas" aria-hidden="true" />;
 }
 
 function ReaderApp({ user, token, onSignOut }) {

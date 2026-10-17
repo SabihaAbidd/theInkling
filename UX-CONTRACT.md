@@ -117,7 +117,7 @@
 - Migration ledger: this section and the sprint commits on `main`.
 - Canonical primitives: CSS tokens in `src/index.css`; shared semantic components in `src/main.jsx`.
 - Current slices: reader shell/onboarding, article actions, archive, PDF export, and hybrid TF-IDF plus LangChain ranking.
-- Legacy CLI, digest, email, payment, and YouTube code paths have been removed. Legacy database models and repository methods remain for compatibility until migrations can retire them safely.
+- Legacy CLI, digest, email, payment, and YouTube code paths have been removed. Unused legacy tables are renamed to `legacy_*` by Alembic, preserving their data while keeping them out of the live repository and ORM.
 - Rollback is by commit; edition snapshots remain backward-compatible JSON records.
 
 ## Verification

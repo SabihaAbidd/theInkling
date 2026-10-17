@@ -7,10 +7,6 @@ from sqlalchemy.engine import Connection, Engine
 
 USER_COLUMN_DEFINITIONS = {
     "password_hash": "TEXT",
-    "stripe_customer_id": "VARCHAR(255)",
-    "plan_name": "VARCHAR(100) NOT NULL DEFAULT 'free'",
-    "subscription_status": "VARCHAR(50) NOT NULL DEFAULT 'free'",
-    "email_verified": "BOOLEAN NOT NULL DEFAULT false",
     "preferences": "JSON NOT NULL DEFAULT '{}'",
 }
 

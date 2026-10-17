@@ -401,8 +401,8 @@ function InklingLanding({ onOpenAuth }) {
             <em>Less noise.</em>
           </h1>
           <p className="landing-lede">
-            A calmer way to keep up. The Inkling gathers reporting and research from around the
-            world, then shapes a daily edition around your interests.
+            Trusted reporting, gathered around your interests. Start with a clear daily edition and
+            follow every story back to its source.
           </p>
           <div className="landing-hero-actions">
             <button
@@ -425,15 +425,22 @@ function InklingLanding({ onOpenAuth }) {
             </span>
           </div>
         </div>
-        <div
-          className="landing-art"
-          aria-label="Illustration of birds flying over a quiet landscape"
-        >
+        <div className="landing-art" aria-hidden="true">
+          <video
+            className="landing-video"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/4f690bd1-881a-4192-82f2-d714d34c8fb9.png"
+          >
+            <source
+              src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260901_122529_931c22c8-8d2d-47c0-ad51-b97f56a91e42.mp4"
+              type="video/mp4"
+            />
+          </video>
           <InklingCanvas />
-          <div className="art-caption">
-            <span>THE MORNING, IN PERSPECTIVE</span>
-            <span>01 — 23</span>
-          </div>
         </div>
         <a className="landing-scroll" href="#how-it-works">
           SCROLL TO EXPLORE <span>↓</span>
@@ -557,39 +564,6 @@ function InklingCanvas() {
       const width = bounds.width;
       const height = bounds.height;
       context.clearRect(0, 0, width, height);
-      context.fillStyle = "#e9e3d9";
-      context.fillRect(0, 0, width, height);
-      context.strokeStyle = "rgba(23,90,103,.16)";
-      context.lineWidth = 1;
-      for (let x = 0; x < width; x += 26) {
-        context.beginPath();
-        context.moveTo(x, 0);
-        context.lineTo(x, height);
-        context.stroke();
-      }
-      context.fillStyle = "#c9d7ce";
-      context.beginPath();
-      context.moveTo(0, height * 0.69);
-      context.quadraticCurveTo(width * 0.24, height * 0.48, width * 0.48, height * 0.7);
-      context.quadraticCurveTo(width * 0.73, height * 0.91, width, height * 0.56);
-      context.lineTo(width, height);
-      context.lineTo(0, height);
-      context.fill();
-      context.fillStyle = "#8eaaa0";
-      context.beginPath();
-      context.moveTo(0, height * 0.82);
-      context.quadraticCurveTo(width * 0.28, height * 0.62, width * 0.58, height * 0.82);
-      context.quadraticCurveTo(width * 0.78, height * 0.96, width, height * 0.74);
-      context.lineTo(width, height);
-      context.lineTo(0, height);
-      context.fill();
-      context.fillStyle = "rgba(244,240,231,.78)";
-      context.beginPath();
-      context.moveTo(0, height * 0.78);
-      context.quadraticCurveTo(width * 0.5, height * 0.7, width, height * 0.82);
-      context.lineTo(width, height);
-      context.lineTo(0, height);
-      context.fill();
       const elapsed = reduceMotion ? 0 : time / 1000;
       const birds = [
         { x: 0.59, y: 0.27, size: 1 },

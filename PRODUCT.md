@@ -29,7 +29,7 @@ The Inkling creates a personal, general-interest newspaper from a reader's selec
 
 - Shipped foundation: authenticated accounts, topic-tagged feeds, a typed LangGraph edition workflow, persistent editions and feedback, Celery/Redis edition jobs, rate limits, and LangSmith configuration.
 - Shipped: reader onboarding, topic/source preferences, TF-IDF feedback ranking, a LangChain model reranker, grounded batch editing, the daily/archived web reader, and authenticated PDF downloads.
-- In progress: retiring legacy aggregator flows.
+- In progress: removing legacy database models and repository methods safely after introducing schema migrations.
 
 ## Acceptance criteria
 

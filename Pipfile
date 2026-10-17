@@ -27,6 +27,7 @@ langgraph-checkpoint-postgres = ">=2.0.0"
 celery = {version = ">=5.4.0", extras = ["redis"]}
 redis = ">=5.0.0"
 fastapi-limiter = ">=0.1.6"
+reportlab = ">=4.4.0"
 
 [dev-packages]
 ruff = "*"

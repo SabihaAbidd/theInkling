@@ -10,7 +10,7 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, field_validator
 from redis import asyncio as redis
@@ -29,6 +29,7 @@ from app.database.repository import (
 )
 from app.scrapers.sources import SOURCES
 from app.services.auth import create_token, hash_password, parse_token, verify_password
+from app.services.paper_pdf import render_edition_pdf
 from app.tasks.editions import build_edition_task
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -468,6 +469,36 @@ def paper_detail(edition_id: int, user=Depends(current_user)) -> dict:
         return {"edition": _serialize_edition(edition)}
 
 
+@app.get("/api/papers/{edition_id}/pdf")
+def paper_pdf(edition_id: int, user=Depends(current_user)) -> Response:
+    """Download a private, print-ready PDF for an owned saved edition."""
+
+    with get_session() as session:
+        edition = get_daily_edition(session, user.id, edition_id)
+        if edition is None:
+            raise HTTPException(status_code=404, detail="Paper edition not found.")
+        if edition.status != "ready":
+            raise HTTPException(status_code=409, detail="This paper is not ready yet.")
+        edition_date = edition.edition_date.isoformat()
+        pdf_bytes = render_edition_pdf(
+            title=edition.title,
+            edition_date=edition_date,
+            editorial=edition.editorial,
+            articles=edition.items_snapshot or [],
+        )
+
+    filename = f"the-inkling-{edition_date}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @app.post(
     "/api/papers/{edition_id}/feedback",
     dependencies=[redis_rate_limit(30, 60, "paper-feedback")],
@@ -537,7 +568,10 @@ def _serialize_edition(edition: DailyEdition) -> dict:
         "title": edition.title,
         "editorial": edition.editorial,
         "articles": edition.items_snapshot or [],
-        "pdf_ready": bool(edition.pdf_path),
+        "pdf_ready": edition.status == "ready",
+        "pdf_url": f"/api/papers/{edition.id}/pdf"
+        if edition.status == "ready"
+        else None,
         "error_code": edition.error_code,
         "created_at": isoformat(edition.created_at),
         "generated_at": isoformat(edition.generated_at),

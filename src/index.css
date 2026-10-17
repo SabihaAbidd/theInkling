@@ -1638,7 +1638,7 @@ input:focus-visible {
 
 .landing-page {
   --landing-ink: #175a67;
-  --landing-cream: #eae3de;
+  --landing-cream: #ffffff;
   min-height: 100vh;
   overflow: hidden;
   color: var(--landing-ink);
@@ -2100,7 +2100,7 @@ input:focus-visible {
 /* The Inkling editorial hero follows the supplied landscape video treatment. */
 .landing-page {
   --landing-ink: #175a67;
-  --landing-cream: #eae3de;
+  --landing-cream: #ffffff;
   overflow-x: clip;
   background: var(--landing-cream);
   font-family: "Poppins", "Helvetica Neue", Arial, sans-serif;
@@ -2130,10 +2130,22 @@ input:focus-visible {
   inset: 0;
   min-height: 0;
   overflow: hidden;
-  background: var(--landing-cream);
+  background: #ffffff;
 }
 .landing-art::after {
-  display: none;
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    rgb(255 255 255 / 98%) 34%,
+    rgb(255 255 255 / 88%) 48%,
+    rgb(255 255 255 / 48%) 69%,
+    rgb(255 255 255 / 18%) 100%
+  );
+  content: "";
+  pointer-events: none;
 }
 .landing-video {
   position: absolute;
@@ -2144,11 +2156,12 @@ input:focus-visible {
   object-fit: cover;
   object-position: center bottom;
   pointer-events: none;
+  filter: saturate(0.58) brightness(1.12);
   animation: landing-fade-in 1.35s ease both;
 }
 .inkling-canvas {
   z-index: 1;
-  opacity: 0.62;
+  opacity: 0.34;
   pointer-events: none;
 }
 .landing-hero-copy {
@@ -2242,9 +2255,9 @@ input:focus-visible {
     height: clamp(52px, 16vw, 120px);
     background: linear-gradient(
       to bottom,
-      var(--landing-cream) 0%,
-      rgb(234 227 222 / 65%) 38%,
-      rgb(234 227 222 / 0%) 100%
+      #ffffff 0%,
+      rgb(255 255 255 / 65%) 38%,
+      rgb(255 255 255 / 0%) 100%
     );
     content: "";
     pointer-events: none;
@@ -2293,7 +2306,9 @@ input:focus-visible {
   }
   .landing-hero {
     background-color: var(--landing-cream);
-    background-image: url("https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/4f690bd1-881a-4192-82f2-d714d34c8fb9.png");
+    background-image:
+      linear-gradient(90deg, #ffffff 0%, rgb(255 255 255 / 86%) 48%, rgb(255 255 255 / 28%) 100%),
+      url("https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/4f690bd1-881a-4192-82f2-d714d34c8fb9.png");
     background-position: center bottom;
     background-size: cover;
     background-repeat: no-repeat;

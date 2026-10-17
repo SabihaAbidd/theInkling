@@ -68,14 +68,12 @@ def print_startup_report() -> None:
     fastapi = importlib.import_module("fastapi")
     starlette = importlib.import_module("starlette")
     sqlalchemy = importlib.import_module("sqlalchemy")
-    stripe = importlib.import_module("stripe")
 
     print("=== Render startup diagnostics ===", flush=True)
     print(f"Python: {sys.version}", flush=True)
     print(f"FastAPI: {fastapi.__version__}", flush=True)
     print(f"Starlette: {starlette.__version__}", flush=True)
     print(f"SQLAlchemy: {sqlalchemy.__version__}", flush=True)
-    print(f"Stripe: {getattr(stripe, 'VERSION', 'unknown')}", flush=True)
     print(f"PORT: {env_status('PORT')}", flush=True)
     print(f"DATABASE_URL: {env_status('DATABASE_URL')}", flush=True)
     if os.getenv("DATABASE_URL"):
@@ -87,7 +85,6 @@ def print_startup_report() -> None:
     print(f"AUTH_SECRET_KEY: {env_status('AUTH_SECRET_KEY')}", flush=True)
     print(f"GROQ_API_KEY: {env_status('GROQ_API_KEY')}", flush=True)
     print(f"LANGSMITH_API_KEY: {env_status('LANGSMITH_API_KEY')}", flush=True)
-    print(f"STRIPE_SECRET_KEY: {env_status('STRIPE_SECRET_KEY')}", flush=True)
     print("==================================", flush=True)
 
 

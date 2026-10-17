@@ -7,8 +7,6 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": "http://127.0.0.1:8000",
-      "/success": "http://127.0.0.1:8000",
-      "/cancel": "http://127.0.0.1:8000",
     },
   },
 });

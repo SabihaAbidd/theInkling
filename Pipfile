@@ -26,8 +26,8 @@ alembic = ">=1.16.0"
 ruff = "*"
 
 [scripts]
-lint = "ruff check app"
-format = "ruff format --check app"
+lint = "ruff check app tests migrations"
+format = "ruff format --check app tests migrations"
 migrate = "alembic upgrade head"
 
 [requires]

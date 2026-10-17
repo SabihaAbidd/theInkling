@@ -27,9 +27,9 @@ jobs:
       - name: Install locked dependencies
         run: pipenv sync --dev
       - name: Lint backend and tests
-        run: pipenv run ruff check app tests
+        run: pipenv run ruff check app tests migrations
       - name: Check backend formatting
-        run: pipenv run ruff format --check app tests
+        run: pipenv run ruff format --check app tests migrations
       - name: Run personalization checks
         run: pipenv run python -m unittest discover -s tests -v
 

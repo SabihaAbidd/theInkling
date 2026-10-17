@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ai-news-aggregator-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.render_start
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.0

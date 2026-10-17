@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from email.utils import parsedate_to_datetime
+from functools import partial
 from html import unescape
 from urllib.parse import urljoin
 
@@ -16,6 +18,7 @@ from .models import Article, NewsSource
 from .sources import SOURCES
 
 DEFAULT_TIMEOUT = 20
+MAX_CONCURRENT_SOURCES = 8
 logger = logging.getLogger(__name__)
 HEADERS = {
     "User-Agent": "TheInkling/1.0 (personalized news reader)",
@@ -35,22 +38,36 @@ def scrape_all_sources(
 
     articles: list[Article] = []
     selected_sources = SOURCES
-    if source_names:
+    if source_names is not None:
         allowed_names = {name.strip().lower() for name in source_names if name.strip()}
         selected_sources = tuple(
             source
             for source in selected_sources
             if source.name.lower() in allowed_names
         )
-    selected_sources = (
-        selected_sources[:max_sources] if max_sources else selected_sources
-    )
-    for source in selected_sources:
-        try:
-            articles.extend(scrape_source(source, limit=limit_per_source))
-        except Exception as exc:
-            logger.warning("Skipping source %s: %s", source.name, exc)
+    if max_sources is not None:
+        selected_sources = selected_sources[: max(0, max_sources)]
+    if not selected_sources:
+        return []
+
+    scrape_selected = partial(_scrape_source_safely, limit=limit_per_source)
+    with ThreadPoolExecutor(
+        max_workers=min(MAX_CONCURRENT_SOURCES, len(selected_sources)),
+        thread_name_prefix="inkling-source",
+    ) as executor:
+        for source_articles in executor.map(scrape_selected, selected_sources):
+            articles.extend(source_articles)
     return dedupe_articles(articles)
+
+
+def _scrape_source_safely(source: NewsSource, *, limit: int) -> list[Article]:
+    """Isolate source failures so concurrent collection can keep partial results."""
+
+    try:
+        return scrape_source(source, limit=limit)
+    except Exception as exc:
+        logger.warning("Skipping source %s: %s", source.name, exc)
+        return []
 
 
 def scrape_source(source: NewsSource, limit: int = 10) -> list[Article]:

@@ -1,1956 +1,1253 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { motion } from "motion/react";
-import Hls from "hls.js";
 import {
-  CreditCard,
-  Layers,
-  Lock,
+  Archive,
+  ArrowDownRight,
+  ArrowUpRight,
+  Bookmark,
+  Check,
+  ChevronRight,
+  CircleAlert,
+  Clock3,
+  ExternalLink,
+  Leaf,
+  LoaderCircle,
   LogOut,
-  Mail,
   Newspaper,
-  Shield,
-  Settings,
-  Sparkles,
-  Star,
-  User,
+  RefreshCw,
+  Search,
+  Settings2,
+  Sun,
+  X,
 } from "lucide-react";
 import "./index.css";
 
-const VIDEO_URL = "https://stream.mux.com/kimF2ha9zLrX64H00UgLGPflCzNtl1T0215MlAmeOztv8.m3u8";
-
-const defaultPrefs = {
-  hours: 72,
-  top_n: 10,
-  profile_name: "default_ai_reader",
-  use_llm: true,
-  generate_missing_digests: true,
-  preferred_sources: ["OpenAI News", "Anthropic News", "TechCrunch AI"],
-  preferred_kinds: ["article", "youtube_video"],
-  keywords: ["openai", "anthropic", "agents", "llm"],
-  excluded_keywords: [],
-};
-
-const validationLimits = {
-  minHours: 1,
-  maxHours: 72,
-  minTopDigests: 1,
-  maxTopDigests: 10,
-  maxSources: 20,
-  maxKeywords: 20,
-  maxKeywordLength: 40,
-  maxReviewLength: 2000,
-};
-
-const IDLE_LOGOUT_MS = 5 * 60 * 1000;
-const LAST_ACTIVITY_KEY = "asme_last_active";
-
-const profileOptions = [
+const TOKEN_KEY = "asme_token";
+const USER_KEY = "asme_user";
+const TOPIC_GROUPS = [
+  { title: "The world", topics: ["world", "politics", "society", "business", "economy"] },
   {
-    id: "default_ai_reader",
-    title: "Balanced AI reader",
-    text: "OpenAI, Anthropic, DeepMind, agents, research, and major product updates.",
+    title: "Science and ideas",
+    topics: ["science", "technology", "health", "space", "education", "ai"],
   },
-  {
-    id: "openai_anthropic",
-    title: "OpenAI + Anthropic",
-    text: "Focused tracking for ChatGPT, Claude, model launches, and safety updates.",
-  },
-  {
-    id: "builders",
-    title: "Builder mode",
-    text: "Developer tools, APIs, agents, RAG, open source, and implementation ideas.",
-  },
+  { title: "People and planet", topics: ["climate", "environment", "culture", "arts"] },
 ];
 
-const sourceOptions = [
-  "OpenAI News",
-  "OpenAI Blog",
-  "Anthropic News",
-  "Google DeepMind News",
-  "Google AI Developers Blog",
-  "Google Cloud Generative AI",
-  "Hugging Face Blog",
-  "Microsoft AI Blog",
-  "Microsoft Semantic Kernel Blog",
-  "GitHub Copilot Blog",
-  "NVIDIA Generative AI",
-  "IBM AI Blog",
-  "Meta AI Blog",
-  "Mistral AI News",
-  "xAI News",
-  "Cohere Blog",
-  "Perplexity Blog",
-  "TechCrunch AI",
-  "The Verge AI",
-  "VentureBeat AI",
-  "MIT Technology Review AI",
-  "WIRED AI",
-  "Ars Technica AI",
-  "The Decoder",
-  "Unite.AI",
-  "InfoQ AI ML Data Engineering",
-  "MarkTechPost",
-  "Latent Space",
-  "The Sequence",
-  "Interconnects",
-  "The Batch",
-  "LangChain Blog",
-  "LlamaIndex Blog",
-  "Weights & Biases Blog",
-  "Pinecone Blog",
-  "Weaviate Blog",
-  "Qdrant Blog",
-  "Together AI Blog",
-  "Groq Blog",
-  "AssemblyAI Blog",
-  "Deepgram Blog",
-  "Cursor Blog",
-  "Vercel AI Blog",
-  "Reuters AI",
-  "AP Technology AI",
-  "ZDNET AI",
-  "The Register AI",
-  "IEEE Spectrum AI",
-  "Epoch AI Blog",
-  "Stanford CRFM Blog",
-  "MIT News AI",
-  "CMU Machine Learning Blog",
-  "Dark Reading AI",
-  "Google Security AI",
-  "Microsoft Security AI",
-  "Lakera Blog",
-  "Mozilla AI",
-  "AI Incident Database Blog",
-];
-
-const keywordOptions = [
-  "openai",
-  "anthropic",
-  "agents",
-  "llm",
-  "rag",
-  "api",
-  "research",
-  "safety",
-  "multimodal",
-  "open source",
-];
-
-const contentTypeOptions = [
-  ["article", "Articles"],
-  ["youtube_video", "YouTube"],
-];
-
-function BrandMark({ compact = false }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="grid h-10 w-10 place-items-center rounded-2xl border border-white/20 bg-white text-[#07111f] shadow-lg shadow-black/20">
-        <div className="text-center leading-none">
-          <div className="text-sm font-semibold tracking-[-0.02em]">AN</div>
-          <div className="text-[8px] font-semibold uppercase tracking-[0.12em]">News</div>
-        </div>
-      </div>
-      {!compact && (
-        <div className="leading-tight text-left">
-          <div className="text-sm font-semibold text-white">AI News</div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-white/45">Aggregator</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BackgroundVideo() {
-  const videoRef = useRef(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return undefined;
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = VIDEO_URL;
-      return undefined;
-    }
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(VIDEO_URL);
-      hls.attachMedia(video);
-      return () => hls.destroy();
-    }
-    return undefined;
-  }, []);
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="w-full h-full object-cover opacity-100"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b32]/45 via-[#0b1020]/58 to-[#050914]/72" />
-    </div>
-  );
-}
-
-function Navbar({ user, onOpenAuth, onDashboard, onOpenInfo }) {
-  return (
-    <motion.nav
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="relative z-20 px-6 py-6 w-full"
-    >
-      <div className="liquid-glass rounded-full px-6 py-3 flex items-center justify-between max-w-5xl mx-auto">
-        <div className="flex items-center gap-8">
-          <button
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={onDashboard}
-            type="button"
-          >
-            <BrandMark />
-          </button>
-          <div className="hidden md:flex items-center gap-8 text-white/80 text-sm font-medium">
-            {["Features", "Pricing", "About"].map((link) => (
-              <button
-                className="hover:text-white transition-colors duration-300"
-                key={link}
-                onClick={() => onOpenInfo(link.toLowerCase())}
-                type="button"
-              >
-                {link}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {user ? (
-            <>
-              <button
-                type="button"
-                className="text-white hover:text-white/80 transition-colors text-sm font-medium cursor-pointer"
-                onClick={onDashboard}
-              >
-                Open app
-              </button>
-              <div className="liquid-glass rounded-full px-5 py-2 text-sm font-medium text-white/90">
-                Active session
-              </div>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="text-white hover:text-white/80 transition-colors text-sm font-medium cursor-pointer"
-                onClick={() => onOpenAuth("register")}
-              >
-                Sign Up
-              </button>
-              <button
-                type="button"
-                className="liquid-glass rounded-full px-6 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity cursor-pointer"
-                onClick={() => onOpenAuth("login")}
-              >
-                Login
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </motion.nav>
-  );
-}
-
-function Hero({ onOpenAuth }) {
-  return (
-    <section className="relative flex-1 flex flex-col items-center justify-center px-6">
-      <div className="relative z-10 text-center max-w-5xl mx-auto flex flex-col items-center justify-center w-full gap-12">
-        <div>
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-white/80 text-[10px] md:text-[11px] font-medium tracking-[0.2em] uppercase mb-4"
-          >
-            PERSONALIZED AI NEWS DIGESTS
-          </motion.p>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              fontFamily: "'Instrument Serif', serif",
-              textShadow: "0 18px 50px rgba(0,0,0,0.55), 0 2px 16px rgba(56,189,248,0.18)",
-            }}
-            className="text-4xl md:text-[64px] font-medium tracking-[-0.01em] leading-[1.1] mb-6 text-white max-w-4xl"
-          >
-            Daily AI news ranked around
-            <br className="hidden md:block" /> what you care about
-          </motion.h1>
-          <p className="mx-auto max-w-2xl text-white/70 text-sm md:text-base leading-7">
-            Track OpenAI, Anthropic, research labs, product launches, and trusted AI media in one
-            personalized dashboard with daily email digests.
-          </p>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="min-h-[50px] mt-2"
-        >
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-[#07111f] transition-opacity hover:opacity-90"
-              type="button"
-              onClick={() => onOpenAuth("register")}
-            >
-              Create account
-            </button>
-            <button
-              className="rounded-full border border-white/15 bg-white/[0.04] px-7 py-3 text-sm font-semibold text-white/85 transition-colors hover:border-white/35 hover:text-white"
-              type="button"
-              onClick={() => onOpenAuth("login")}
-            >
-              Login
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function InfoModal({ type, onClose, onOpenAuth }) {
-  const content = {
-    features: {
-      eyebrow: "Features",
-      title: "A personal operating layer for AI news",
-      body: "AI News Aggregator combines source scraping, AI summarization, preference ranking, subscriptions, and email delivery into one workflow for tracking fast-moving AI updates.",
-      items: [
-        [
-          "Priorities dashboard",
-          "Pick profiles, sources, keywords, and content types with simple controls instead of raw setup.",
-        ],
-        [
-          "Digest maker",
-          "Choose top-N articles from any time window and rank them with LLM-based ranking plus deterministic fallback.",
-        ],
-        [
-          "Subscription email agent",
-          "Subscribed users get a daily 24-hour digest using the same saved preferences and ranking surface.",
-        ],
-      ],
-    },
-    pricing: {
-      eyebrow: "Pricing",
-      title: "Test the full payment path before charging users",
-      body: "The current Stripe setup can save a card at $0.00 using Checkout setup mode. Later, you can switch to a live recurring Stripe Price for paid subscriptions.",
-      items: [
-        ["Free trial", "Use the dashboard, set priorities, and generate ranked digests."],
-        [
-          "Subscription flow",
-          "Use Stripe Checkout to collect payment credentials safely and store subscription records.",
-        ],
-        [
-          "Paid launch",
-          "Set STRIPE_PRICE_ID to a live recurring price when you are ready to charge $1, $2, or more.",
-        ],
-      ],
-    },
-    about: {
-      eyebrow: "About",
-      title: "Built as an end-to-end AI news product",
-      body: "The project is a deployable learning product: scrapers feed a database, digest agents summarize, ranking agents personalize, and the website exposes the workflow to users.",
-      items: [
-        ["Backend", "FastAPI, PostgreSQL, SQLAlchemy, Gemini-powered digest and ranking agents."],
-        ["Frontend", "React, Vite, Tailwind CSS v4, Motion, Lucide icons, HLS background video."],
-        [
-          "Payments",
-          "Stripe Checkout with local records for users, subscriptions, and transactions.",
-        ],
-      ],
-    },
-  }[type];
-
-  if (!content) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 px-4 py-4 sm:grid sm:place-items-center sm:py-8">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="liquid-glass mx-auto w-full max-w-3xl rounded-[26px] p-5 sm:rounded-[30px] sm:p-7"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">{content.eyebrow}</p>
-            <h2
-              style={{ fontFamily: "'Instrument Serif', serif" }}
-              className="mt-2 text-3xl leading-tight sm:text-4xl md:text-5xl"
-            >
-              {content.title}
-            </h2>
-            <p className="mt-4 text-white/65 leading-7 max-w-2xl">{content.body}</p>
-          </div>
-          <button
-            className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/75"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
-        </div>
-        <div className="mt-7 grid md:grid-cols-3 gap-3">
-          {content.items.map(([title, text]) => (
-            <div key={title} className="rounded-3xl border border-white/10 bg-white/[0.035] p-4">
-              <h3 className="font-semibold">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-white/55">{text}</p>
-            </div>
-          ))}
-        </div>
-        <button
-          className="mt-7 rounded-full bg-white px-5 py-3 font-semibold text-[#07111f]"
-          onClick={() => onOpenAuth("register")}
-          type="button"
-        >
-          Create account
-        </button>
-      </motion.div>
-    </div>
-  );
-}
-
-function AuthModal({ mode, initialEmail, onClose, onAuth }) {
-  const [isRegister, setIsRegister] = useState(mode !== "login");
-  const [form, setForm] = useState({
-    name: "",
-    email: initialEmail || "",
-    password: "",
-  });
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function submit(event) {
-    event.preventDefault();
-    if (isSubmitting) return;
-    setError("");
-    setNotice("");
-    const email = form.email.trim();
-    const password = form.password.trim();
-    const name = form.name.trim();
-    if (isRegister && !name) {
-      setError("Please enter your name.");
-      return;
-    }
-    if (name.length > 80) {
-      setError("Name must be 80 characters or fewer.");
-      return;
-    }
-    if (!email) {
-      setError("Please enter your email.");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-    if (!password) {
-      setError("Please enter your password.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-    if (password.length > 128) {
-      setError("Password must be 128 characters or fewer.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setNotice(isRegister ? "Creating your account..." : "Logging you in...");
-    try {
-      const data = await api(`/api/auth/${isRegister ? "register" : "login"}`, {
-        method: "POST",
-        body: JSON.stringify({ ...form, name, email, password }),
-      });
-      if (isRegister) {
-        setNotice("Account created. Please login with the same email and password.");
-        setIsRegister(false);
-        setForm({ ...form, password: "" });
-        return;
-      }
-      onAuth(data);
-    } catch (err) {
-      setNotice("");
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+function savedUser() {
+  try {
+    return JSON.parse(localStorage.getItem(USER_KEY) || "null");
+  } catch {
+    return null;
   }
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 px-4 py-4 sm:grid sm:place-items-center sm:py-8">
-      <motion.form
-        initial={{ opacity: 0, scale: 0.96, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="liquid-glass mx-auto w-full max-w-md rounded-[26px] p-5 sm:rounded-[28px] sm:p-7"
-        onSubmit={submit}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">Account</p>
-            <h2 className="text-2xl font-semibold">{isRegister ? "Create account" : "Login"}</h2>
-          </div>
-          <button
-            className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/75"
-            onClick={onClose}
-            type="button"
-          >
-            Close
-          </button>
-        </div>
-        {notice && (
-          <p className="mb-4 rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-3 text-sm text-emerald-100">
-            {notice}
-          </p>
-        )}
-        <div className="grid gap-4">
-          {isRegister && (
-            <Field
-              icon={User}
-              label="Name"
-              value={form.name}
-              maxLength={80}
-              onChange={(name) => setForm({ ...form, name })}
-            />
-          )}
-          <Field
-            icon={Mail}
-            label="Email"
-            value={form.email}
-            type="email"
-            maxLength={254}
-            onChange={(email) => setForm({ ...form, email })}
-          />
-          <Field
-            icon={Lock}
-            label="Password"
-            value={form.password}
-            type="password"
-            maxLength={128}
-            onChange={(password) => setForm({ ...form, password })}
-          />
-        </div>
-        {error && (
-          <pre className="mt-4 max-h-44 overflow-auto whitespace-pre-wrap rounded-2xl border border-red-300/20 bg-red-950/30 p-3 text-xs leading-5 text-red-100">
-            {error}
-          </pre>
-        )}
-        <button
-          className={`mt-6 w-full rounded-full bg-white text-black py-3 font-semibold transition-opacity ${isSubmitting ? "cursor-wait opacity-70" : "hover:opacity-90"}`}
-          disabled={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting
-            ? isRegister
-              ? "Creating account..."
-              : "Logging in..."
-            : isRegister
-              ? "Register"
-              : "Login"}
-        </button>
-        <button
-          className="mt-4 w-full text-center text-white/60 text-sm"
-          type="button"
-          onClick={() => setIsRegister(!isRegister)}
-        >
-          {isRegister ? "Already have an account? Login" : "Need an account? Register"}
-        </button>
-      </motion.form>
-    </div>
-  );
-}
-
-function Dashboard({ user, token, onLogout }) {
-  const [page, setPage] = useState("preferences");
-  const [prefs, setPrefs] = useState(() => normalizePreferences(user.preferences));
-  const [digests, setDigests] = useState(null);
-  const [reviews, setReviews] = useState(null);
-  const [adminData, setAdminData] = useState(null);
-  const [message, setMessage] = useState("");
-  const [isDigestLoading, setIsDigestLoading] = useState(false);
-  const [showGuide, setShowGuide] = useState(() => {
-    return localStorage.getItem(`asme_guide_seen_${user.id}`) !== "1";
-  });
-
-  function closeGuide() {
-    localStorage.setItem(`asme_guide_seen_${user.id}`, "1");
-    setShowGuide(false);
-  }
-
-  async function savePrefs() {
-    const validationError = validateDigestPreferences(prefs);
-    if (validationError) {
-      setMessage(validationError);
-      return;
-    }
-    setMessage("Saving preferences...");
-    try {
-      const data = await api("/api/preferences", {
-        method: "POST",
-        token,
-        body: JSON.stringify(prefs),
-      });
-      setPrefs({ ...prefs, ...data.preferences });
-      setMessage("Preferences saved.");
-    } catch (err) {
-      setMessage(err.message);
-    }
-  }
-
-  async function loadDigests() {
-    const validationError = validateDigestPreferences(prefs);
-    if (validationError) {
-      setMessage(validationError);
-      return;
-    }
-    setIsDigestLoading(true);
-    setMessage(
-      "Creating your digest. The app will map your priorities, fetch matching sources into the database, generate AI digest rows, then rank them. Please wait around 90-120 seconds.",
-    );
-    try {
-      const data = await api("/api/dashboard/digests", {
-        method: "POST",
-        token,
-        body: JSON.stringify(prefs),
-      });
-      setDigests(data);
-      setPage("digests");
-      const generation = data.digest_generation;
-      const scrape = data.scrape_result;
-      const generationText = generation
-        ? ` Digests processed: ${generation.processed}, saved: ${generation.created_or_updated}${generation.stopped_reason ? `, stopped: ${generation.stopped_reason}` : ""}.`
-        : "";
-      const scrapeText = scrape ? ` Sources checked/stored: ${scrape.stored_or_updated}.` : "";
-      const llmText = data.llm_status?.message ? ` ${data.llm_status.message}` : "";
-      const emptyText =
-        data.total_items === 0
-          ? " No digest rows were available after scraping and generation. Try a larger time window, then check backend logs if this keeps happening."
-          : "";
-      setMessage(
-        `${data.ranking_method.toUpperCase()} ranking returned ${data.total_items} items.${scrapeText}${generationText}${llmText}${emptyText}`,
-      );
-    } catch (err) {
-      setMessage(err.message);
-    } finally {
-      setIsDigestLoading(false);
-    }
-  }
-
-  async function startCheckout() {
-    const accountError = validateAccountIdentity(user);
-    if (accountError) {
-      setMessage(accountError);
-      return;
-    }
-    setMessage("Opening Stripe Checkout...");
-    try {
-      const data = await api("/api/payments/checkout", {
-        method: "POST",
-        body: JSON.stringify({ name: user.name, email: user.email }),
-      });
-      window.location.href = data.url;
-    } catch (err) {
-      setMessage(err.message);
-    }
-  }
-
-  async function loadReviews() {
-    setMessage("Loading reviews...");
-    try {
-      const data = await api("/api/reviews", { token });
-      setReviews(data);
-      setPage("reviews");
-      setMessage("");
-    } catch (err) {
-      setMessage(err.message);
-    }
-  }
-
-  async function saveReview(payload) {
-    const validationError = validateReviewPayload(payload);
-    if (validationError) {
-      setMessage(validationError);
-      return;
-    }
-    setMessage("Saving your review...");
-    try {
-      const data = await api("/api/reviews", {
-        method: "POST",
-        token,
-        body: JSON.stringify(payload),
-      });
-      setReviews((current) => ({
-        my_review: data.review,
-        reviews: [
-          data.review,
-          ...(current?.reviews || []).filter((review) => review.id !== data.review.id),
-        ].slice(0, 12),
-      }));
-      setMessage("Thanks. Your review was saved.");
-    } catch (err) {
-      setMessage(err.message);
-    }
-  }
-
-  async function loadAdmin() {
-    setMessage("Loading admin dashboard...");
-    try {
-      const data = await api("/api/admin/overview", { token });
-      setAdminData(data);
-      setPage("admin");
-      setMessage("");
-    } catch (err) {
-      setMessage(err.message);
-    }
-  }
-
-  return (
-    <main className="relative min-h-screen dashboard-atmosphere text-white overflow-x-hidden">
-      <BackgroundVideo />
-      <div className="absolute inset-0 bg-[#07111f]/58" />
-      <div className="relative z-10 min-h-screen dashboard-grid gap-3 p-3 sm:gap-4 sm:p-4">
-        <aside className="liquid-glass rounded-[26px] p-4 sm:rounded-[32px] sm:p-5 lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
-          <div className="mb-4 sm:mb-8">
-            <BrandMark />
-          </div>
-          <nav className="flex gap-2 overflow-x-auto pb-1 lg:grid lg:overflow-visible lg:pb-0">
-            <NavButton
-              icon={Settings}
-              active={page === "preferences"}
-              onClick={() => setPage("preferences")}
-            >
-              Priorities
-            </NavButton>
-            <NavButton
-              icon={Newspaper}
-              active={page === "digests"}
-              onClick={() => setPage("digests")}
-            >
-              Digest maker
-            </NavButton>
-            <NavButton
-              icon={CreditCard}
-              active={page === "subscription"}
-              onClick={() => setPage("subscription")}
-            >
-              Subscription
-            </NavButton>
-            <NavButton icon={Star} active={page === "reviews"} onClick={loadReviews}>
-              Reviews
-            </NavButton>
-            {user.is_admin && (
-              <NavButton icon={Shield} active={page === "admin"} onClick={loadAdmin}>
-                Admin
-              </NavButton>
-            )}
-          </nav>
-          <button
-            type="button"
-            className="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white/65 hover:text-white sm:mt-8"
-            onClick={onLogout}
-          >
-            <LogOut className="w-4 h-4" /> Logout
-          </button>
-        </aside>
-        <section className="rounded-[26px] border border-white/15 bg-[#0f1a2d]/62 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:rounded-[32px] sm:p-5 md:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div>
-              <p className="text-white/50 text-sm">Workspace</p>
-              <h1 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl md:text-5xl">
-                AI news dashboard
-              </h1>
-            </div>
-            <div className="glass-pill px-4 py-2 text-sm text-white/80">
-              {user.name} · {user.subscription_status || "free"} plan
-            </div>
-          </div>
-          {message && (
-            <div className="mb-5 rounded-2xl bg-white/10 border border-white/15 p-4 text-sm text-white/85">
-              {message}
-            </div>
-          )}
-          {page === "preferences" && (
-            <Preferences
-              prefs={prefs}
-              setPrefs={setPrefs}
-              onSave={savePrefs}
-              onRun={loadDigests}
-              onInvalid={setMessage}
-              isDigestLoading={isDigestLoading}
-            />
-          )}
-          {page === "digests" && (
-            <DigestMaker
-              prefs={prefs}
-              setPrefs={setPrefs}
-              onRun={loadDigests}
-              digests={digests}
-              isDigestLoading={isDigestLoading}
-            />
-          )}
-          {page === "subscription" && <Subscription user={user} onCheckout={startCheckout} />}
-          {page === "reviews" && (
-            <ReviewsPanel
-              key={reviews?.my_review?.updated_at ?? "new"}
-              reviews={reviews}
-              onSave={saveReview}
-            />
-          )}
-          {page === "admin" && user.is_admin && (
-            <AdminPanel data={adminData} onRefresh={loadAdmin} />
-          )}
-        </section>
-      </div>
-      {showGuide && (
-        <GuideModal
-          onClose={closeGuide}
-          onStart={() => {
-            setPage("preferences");
-            closeGuide();
-          }}
-        />
-      )}
-    </main>
-  );
-}
-
-function GuideModal({ onClose, onStart }) {
-  const steps = [
-    {
-      title: "Choose priorities",
-      text: "Start with a preset, then select the sources and topics you care about. This tells the ranking system what to prefer.",
-    },
-    {
-      title: "Generate a digest",
-      text: "Open Digest maker, choose how many hours and how many articles you want, then generate your ranked news list.",
-    },
-    {
-      title: "Subscribe for emails",
-      text: "Use the Subscription page to connect Stripe Checkout. Subscribed users can receive the daily 24-hour email digest.",
-    },
-  ];
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 px-3 py-3 sm:grid sm:place-items-center sm:px-4 sm:py-8">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="liquid-glass mx-auto w-full max-w-4xl rounded-[24px] p-4 sm:rounded-[32px] sm:p-7"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-white/50 text-xs uppercase tracking-[0.2em]">Quick guide</p>
-            <h2
-              style={{ fontFamily: "'Instrument Serif', serif" }}
-              className="mt-2 text-3xl leading-tight sm:text-4xl md:text-5xl"
-            >
-              Here is how to use AI News
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/65 sm:mt-4 sm:text-base sm:leading-7">
-              The app has three simple areas: priorities, digest making, and subscription. Follow
-              these once and the workflow becomes natural.
-            </p>
-          </div>
-          <button
-            className="shrink-0 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/80 hover:text-white"
-            onClick={onClose}
-            type="button"
-          >
-            Skip
-          </button>
-        </div>
-
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          {steps.map((step, index) => (
-            <div
-              key={step.title}
-              className="rounded-2xl border border-white/15 bg-white/[0.07] p-4 sm:rounded-3xl sm:p-5"
-            >
-              <div className="mb-4 grid h-10 w-10 place-items-center rounded-full bg-white text-black font-semibold">
-                {index + 1}
-              </div>
-              <h3 className="font-semibold text-lg">{step.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-white/60">{step.text}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="sticky bottom-0 -mx-4 mt-5 flex flex-col gap-2 border-t border-white/10 bg-[#07111f]/95 px-4 pt-4 backdrop-blur sm:static sm:mx-0 sm:mt-7 sm:flex-row sm:border-0 sm:bg-transparent sm:p-0">
-          <button
-            className="rounded-full bg-white px-6 py-3 font-semibold text-black"
-            onClick={onStart}
-            type="button"
-          >
-            Start with priorities
-          </button>
-          <button
-            className="rounded-full border border-white/15 px-6 py-3 font-semibold text-white/80"
-            onClick={onClose}
-            type="button"
-          >
-            I know what to do
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-function Preferences({ prefs, setPrefs, onSave, onRun, onInvalid, isDigestLoading }) {
-  const [customKeyword, setCustomKeyword] = useState("");
-
-  function applyProfile(profileName) {
-    const profileDefaults = {
-      default_ai_reader: {
-        preferred_sources: [
-          "OpenAI News",
-          "OpenAI Blog",
-          "Anthropic News",
-          "Google DeepMind News",
-          "Hugging Face Blog",
-          "TechCrunch AI",
-        ],
-        preferred_kinds: ["article", "youtube_video"],
-        keywords: ["openai", "anthropic", "agents", "llm", "research", "safety"],
-      },
-      openai_anthropic: {
-        preferred_sources: ["OpenAI News", "OpenAI Blog", "Anthropic News"],
-        preferred_kinds: ["article"],
-        keywords: ["openai", "anthropic", "claude", "chatgpt", "model", "agent"],
-      },
-      builders: {
-        preferred_sources: ["Hugging Face Blog", "TechCrunch AI"],
-        preferred_kinds: ["article", "youtube_video"],
-        keywords: ["python", "agent", "rag", "api", "developer", "open source"],
-      },
-    }[profileName];
-    setPrefs({ ...prefs, profile_name: profileName, ...profileDefaults });
-  }
-
-  function addCustomKeyword() {
-    const value = customKeyword.trim().toLowerCase();
-    if (!value) return;
-    if (!isSafeShortText(value)) {
-      onInvalid(
-        "Custom topics can use letters, numbers, spaces, hyphens, dots, apostrophes, slashes, plus signs, and # only.",
-      );
-      return;
-    }
-    if (value.length > validationLimits.maxKeywordLength) {
-      onInvalid(`Custom topics must be ${validationLimits.maxKeywordLength} characters or fewer.`);
-      return;
-    }
-    const existingKeywords = prefs.keywords || [];
-    if (
-      !existingKeywords.includes(value) &&
-      existingKeywords.length >= validationLimits.maxKeywords
-    ) {
-      onInvalid(
-        `You can add up to ${validationLimits.maxKeywords} topics. Remove one before adding another.`,
-      );
-      return;
-    }
-    setPrefs({ ...prefs, keywords: Array.from(new Set([...existingKeywords, value])) });
-    setCustomKeyword("");
-  }
-
-  return (
-    <Panel
-      title="Choose what you care about"
-      description="Start from a preset, then tap sources and topics to fine tune the feed."
-    >
-      <div className="grid md:grid-cols-3 gap-3">
-        {profileOptions.map((profile) => (
-          <button
-            key={profile.id}
-            type="button"
-            onClick={() => applyProfile(profile.id)}
-            className={`rounded-3xl border p-4 text-left transition-all ${prefs.profile_name === profile.id ? "border-white/55 bg-white/18" : "border-white/15 bg-white/[0.07] hover:bg-white/[0.11]"}`}
-          >
-            <h3 className="font-semibold">{profile.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-white/55">{profile.text}</p>
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-6 grid gap-4 xl:grid-cols-3">
-        <PreferenceTable
-          title="Source feeds"
-          eyebrow="Where news comes from"
-          description="Official blogs, AI labs, media sites, and trusted update channels."
-          tone="cyan"
-          values={prefs.preferred_sources || []}
-          options={sourceOptions}
-          maxSelected={validationLimits.maxSources}
-          onChange={(preferred_sources) => setPrefs({ ...prefs, preferred_sources })}
-        />
-
-        <div className="rounded-3xl border border-violet-300/20 bg-violet-300/[0.055] p-4">
-          <PreferenceTable
-            title="Topic keywords"
-            eyebrow="What the ranking prefers"
-            description="Signals used to prioritize the articles and videos most relevant to you."
-            tone="violet"
-            values={prefs.keywords || []}
-            options={keywordOptions}
-            maxSelected={validationLimits.maxKeywords}
-            onChange={(keywords) => setPrefs({ ...prefs, keywords })}
-            embedded
-          />
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-            <label className="text-xs font-medium uppercase tracking-[0.16em] text-violet-100/70">
-              Add custom topic
-            </label>
-            <div className="mt-2 flex gap-2">
-              <input
-                className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35"
-                value={customKeyword}
-                onChange={(event) => setCustomKeyword(event.target.value)}
-                placeholder="robotics, evals, startups"
-              />
-              <button
-                className="rounded-2xl bg-violet-200 px-4 text-sm font-semibold text-[#160f2d]"
-                type="button"
-                onClick={addCustomKeyword}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <PreferenceTable
-          title="Content types"
-          eyebrow="Format filters"
-          description="Choose whether the digest should include written posts, YouTube updates, or both."
-          tone="emerald"
-          values={prefs.preferred_kinds || []}
-          options={contentTypeOptions.map(([id]) => id)}
-          labels={Object.fromEntries(contentTypeOptions)}
-          onChange={(preferred_kinds) => setPrefs({ ...prefs, preferred_kinds })}
-        />
-      </div>
-
-      <div className="mt-5 rounded-3xl border border-white/15 bg-white/[0.06] p-4">
-        <Toggle
-          label="Use LLM ranking when available"
-          checked={prefs.use_llm}
-          onChange={(use_llm) => setPrefs({ ...prefs, use_llm })}
-        />
-      </div>
-      <div className="flex gap-3 mt-6">
-        <button
-          className="rounded-full bg-white text-black px-5 py-3 font-semibold"
-          onClick={onSave}
-          type="button"
-        >
-          Save priorities
-        </button>
-        <button
-          className={`rounded-full border border-white/15 px-5 py-3 font-semibold ${isDigestLoading ? "cursor-wait opacity-60" : ""}`}
-          disabled={isDigestLoading}
-          onClick={onRun}
-          type="button"
-        >
-          {isDigestLoading ? "Generating..." : "Generate digest"}
-        </button>
-      </div>
-    </Panel>
-  );
-}
-
-function PreferenceTable({
-  title,
-  eyebrow,
-  description,
-  tone,
-  options,
-  values,
-  onChange,
-  maxSelected,
-  labels = {},
-  embedded = false,
-}) {
-  const tones = {
-    cyan: {
-      shell: "border-cyan-300/20 bg-cyan-300/[0.055]",
-      badge: "bg-cyan-200 text-[#06242b]",
-      selected: "border-cyan-200/70 bg-cyan-200 text-[#06242b]",
-      accent: "text-cyan-100/70",
-    },
-    violet: {
-      shell: "border-transparent bg-transparent p-0",
-      badge: "bg-violet-200 text-[#160f2d]",
-      selected: "border-violet-200/70 bg-violet-200 text-[#160f2d]",
-      accent: "text-violet-100/70",
-    },
-    emerald: {
-      shell: "border-emerald-300/20 bg-emerald-300/[0.055]",
-      badge: "bg-emerald-200 text-[#062b1e]",
-      selected: "border-emerald-200/70 bg-emerald-200 text-[#062b1e]",
-      accent: "text-emerald-100/70",
-    },
-  }[tone];
-
-  function toggle(option) {
-    if (!values.includes(option) && maxSelected && values.length >= maxSelected) {
-      return;
-    }
-    const next = values.includes(option)
-      ? values.filter((item) => item !== option)
-      : [...values, option];
-    onChange(next);
-  }
-
-  return (
-    <section className={embedded ? "" : `rounded-3xl border p-4 ${tones.shell}`}>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${tones.accent}`}>
-            {eyebrow}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3>
-          <p className="mt-2 text-sm leading-6 text-white/55">{description}</p>
-        </div>
-        <div className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${tones.badge}`}>
-          {values.length}/{maxSelected || options.length}
-        </div>
-      </div>
-
-      <div className="grid gap-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => toggle(option)}
-            className={`flex items-center justify-between gap-3 rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
-              values.includes(option)
-                ? tones.selected
-                : maxSelected && values.length >= maxSelected
-                  ? "cursor-not-allowed border-white/10 bg-black/10 text-white/30"
-                  : "border-white/10 bg-black/20 text-white/72 hover:border-white/25 hover:text-white"
-            }`}
-          >
-            <span className="font-medium">{labels[option] || option}</span>
-            <span className="grid h-5 w-5 place-items-center rounded-full border border-current text-[10px]">
-              {values.includes(option) ? "✓" : "+"}
-            </span>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function DigestMaker({ prefs, setPrefs, onRun, digests, isDigestLoading }) {
-  return (
-    <div className="grid gap-5">
-      <Panel
-        title="Digest making"
-        description="Generate missing digest rows, save them to the database, then rank the saved digests for this user."
-      >
-        <div className="grid md:grid-cols-3 gap-4">
-          <Field
-            label="Last hours"
-            type="number"
-            min={validationLimits.minHours}
-            max={validationLimits.maxHours}
-            value={prefs.hours}
-            onChange={(hours) => setPrefs({ ...prefs, hours: Number(hours) })}
-          />
-          <Field
-            label="Top digests"
-            type="number"
-            min={validationLimits.minTopDigests}
-            max={validationLimits.maxTopDigests}
-            value={prefs.top_n}
-            onChange={(top_n) => setPrefs({ ...prefs, top_n: Number(top_n) })}
-          />
-          <Toggle
-            label="Use LLM ranking"
-            checked={prefs.use_llm}
-            onChange={(use_llm) => setPrefs({ ...prefs, use_llm })}
-          />
-        </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="rounded-3xl border border-white/15 bg-white/[0.06] p-4 text-sm leading-6 text-white/65">
-            Digest and ranking agents use the secure backend AI key configured in Render.
-          </div>
-          <Toggle
-            label="Create missing digests first"
-            checked={prefs.generate_missing_digests !== false}
-            onChange={(generate_missing_digests) =>
-              setPrefs({ ...prefs, generate_missing_digests })
-            }
-          />
-        </div>
-        <p className="mt-3 text-sm leading-6 text-white/55">
-          If the LLM fails or hits a limit, the backend saves deterministic fallback digests so the
-          dashboard can still show items.
-        </p>
-        <button
-          className={`mt-5 rounded-full bg-white text-black px-5 py-3 font-semibold ${isDigestLoading ? "cursor-wait opacity-60" : ""}`}
-          disabled={isDigestLoading}
-          onClick={onRun}
-          type="button"
-        >
-          {isDigestLoading ? "Working for up to 2 minutes..." : "Make and rank digests"}
-        </button>
-      </Panel>
-      {digests && (
-        <section className="liquid-glass rounded-[30px] p-5">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
-                Personalized digest
-              </p>
-              <h2 className="mt-1 text-2xl font-semibold">Top {digests.total_items} AI updates</h2>
-              <p className="mt-2 text-sm leading-6 text-white/55">
-                Ranked with {digests.ranking_method} logic across the last {digests.lookback_hours}{" "}
-                hours.
-                {digests.digest_generation
-                  ? ` Generated ${digests.digest_generation.created_or_updated} new digest rows from ${digests.digest_generation.processed} stored articles.`
-                  : ""}
-              </p>
-            </div>
-            <div className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-white/70">
-              Max 10 articles
-            </div>
-          </div>
-          <div className="grid gap-4">
-            {digests.items.map((item) => (
-              <article
-                className="rounded-[28px] border border-white/10 bg-[#111f36]/80 p-5 shadow-xl shadow-black/10"
-                key={item.identity_key}
-              >
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-sm font-semibold text-[#07111f]">
-                    {item.rank}
-                  </span>
-                  <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 font-medium text-cyan-100">
-                    {item.source}
-                  </span>
-                  <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 font-medium text-emerald-100">
-                    {item.kind.replace("_", " ")}
-                  </span>
-                  <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-white/60">
-                    {formatDigestDate(item.published_at)}
-                  </span>
-                  <span className="ml-auto rounded-full border border-white/10 bg-black/20 px-3 py-1 text-white/55">
-                    score {item.score}
-                  </span>
-                </div>
-                <h3 className="mt-4 text-xl font-semibold leading-snug text-white">{item.title}</h3>
-                <p className="mt-3 rounded-3xl border border-white/10 bg-black/20 p-4 text-[15px] leading-8 text-white/80">
-                  {item.summary}
-                </p>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap gap-2">
-                    {(item.matched_reasons || []).slice(0, 4).map((reason) => (
-                      <span
-                        key={reason}
-                        className="rounded-full bg-white/[0.07] px-3 py-1 text-xs text-white/50"
-                      >
-                        {formatReason(reason)}
-                      </span>
-                    ))}
-                  </div>
-                  <a
-                    className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#07111f] transition-opacity hover:opacity-90"
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Read original
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
-          {!digests.items.length && (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-white/60">
-              No readable digest rows were available yet. Generate again after the scraper has saved
-              fresh source items.
-            </div>
-          )}
-        </section>
-      )}
-    </div>
-  );
-}
-
-function Subscription({ user, onCheckout }) {
-  return (
-    <Panel
-      title="Subscription"
-      description="Subscribe to receive daily AI digest emails for the last 24 hours."
-    >
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 max-w-xl">
-        <Sparkles className="w-8 h-8 mb-4 text-white" />
-        <h3 className="text-xl font-semibold">Daily AI digest email</h3>
-        <p className="mt-2 text-white/65 leading-7">
-          Stripe Checkout collects payment details securely. In test mode, use fake cards. In setup
-          mode at $0.00, the card is saved without charge.
-        </p>
-        <div className="mt-5 grid gap-2 text-sm text-white/60">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4" /> Plan: AI News Daily Email
-          </div>
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-4 h-4" /> Current setup: $0.00 card setup
-          </div>
-        </div>
-        <div className="mt-5 text-sm text-white/60">Account: {user.email}</div>
-        <button
-          className="mt-6 rounded-full bg-white text-black px-6 py-3 font-semibold"
-          onClick={onCheckout}
-          type="button"
-        >
-          Try payment
-        </button>
-      </div>
-    </Panel>
-  );
-}
-
-function ReviewsPanel({ reviews, onSave }) {
-  const [rating, setRating] = useState(reviews?.my_review?.rating || 5);
-  const [reviewText, setReviewText] = useState(reviews?.my_review?.review_text || "");
-
-  return (
-    <Panel
-      title="Reviews"
-      description="Tell us how the AI News Aggregator feels to use. Pick a star rating and add a custom review."
-    >
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-3xl border border-white/15 bg-white/[0.06] p-5">
-          <p className="mb-3 text-sm font-medium text-white/70">Your rating</p>
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => setRating(star)}
-                className={`grid h-12 w-12 place-items-center rounded-2xl border transition-colors ${
-                  star <= rating
-                    ? "border-yellow-300/70 bg-yellow-300 text-[#07111f]"
-                    : "border-white/15 bg-white/[0.05] text-white/45 hover:text-white"
-                }`}
-                aria-label={`${star} star${star === 1 ? "" : "s"}`}
-              >
-                <Star className="h-5 w-5" fill={star <= rating ? "currentColor" : "none"} />
-              </button>
-            ))}
-          </div>
-          <label className="mt-5 grid gap-2 text-sm text-white/65">
-            Custom review
-            <textarea
-              className="min-h-[160px] rounded-3xl border border-white/15 bg-[#101b2e] p-4 text-white outline-none placeholder:text-white/35"
-              value={reviewText}
-              onChange={(event) => setReviewText(event.target.value)}
-              placeholder="What worked well? What should improve?"
-              maxLength={2000}
-            />
-          </label>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              className="rounded-full bg-white px-6 py-3 font-semibold text-[#07111f]"
-              onClick={() => onSave({ rating, review_text: reviewText })}
-              type="button"
-            >
-              Save review
-            </button>
-            <span className="text-sm text-white/45">{reviewText.length}/2000</span>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/15 bg-white/[0.06] p-5">
-          <h3 className="font-semibold">Recent reviews</h3>
-          <div className="mt-4 grid gap-3">
-            {(reviews?.reviews || []).length ? (
-              reviews.reviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.045] p-4"
-                >
-                  <div className="mb-2 flex gap-1 text-yellow-300">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className="h-4 w-4"
-                        fill={star <= review.rating ? "currentColor" : "none"}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm leading-6 text-white/70">
-                    {review.review_text || "No written review added."}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm leading-6 text-white/55">
-                No reviews yet. Yours can be the first one.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </Panel>
-  );
-}
-
-function AdminPanel({ data, onRefresh }) {
-  const summary = data?.summary || {};
-  const stats = [
-    ["Users", summary.users || 0],
-    ["Reviews", summary.reviews || 0],
-    ["Subscriptions", summary.subscriptions || 0],
-    ["Active subs", summary.active_subscriptions || 0],
-    ["Transactions", summary.transactions || 0],
-    ["Revenue", formatMoney(summary.total_amount_cents || 0, "usd")],
-    ["News items", summary.news_items || 0],
-    ["Digest rows", summary.digest_items || 0],
-  ];
-
-  return (
-    <Panel
-      title="Admin view"
-      description="Monitor users, reviews, payments, subscriptions, and database activity."
-    >
-      <div className="mb-5 flex justify-end">
-        <button
-          className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-[#07111f]"
-          onClick={onRefresh}
-          type="button"
-        >
-          Refresh
-        </button>
-      </div>
-
-      {!data ? (
-        <div className="rounded-3xl border border-white/10 bg-white/[0.05] p-5 text-white/60">
-          Click refresh to load the admin data.
-        </div>
-      ) : (
-        <div className="grid gap-5">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {stats.map(([label, value]) => (
-              <div key={label} className="rounded-3xl border border-white/10 bg-white/[0.06] p-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/40">{label}</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-              </div>
-            ))}
-          </div>
-
-          <AdminTable
-            title="Recent users"
-            rows={data.users || []}
-            columns={[
-              ["name", "Name"],
-              ["email", "Email"],
-              ["subscription_status", "Plan status"],
-              ["created_at", "Created"],
-            ]}
-          />
-          <AdminTable
-            title="Reviews"
-            rows={data.reviews || []}
-            columns={[
-              ["user_name", "User"],
-              ["user_email", "Email"],
-              ["rating", "Rating"],
-              ["review_text", "Review"],
-              ["updated_at", "Updated"],
-            ]}
-          />
-          <AdminTable
-            title="Subscriptions"
-            rows={data.subscriptions || []}
-            columns={[
-              ["user_email", "Email"],
-              ["plan_name", "Plan"],
-              ["status", "Status"],
-              ["mode", "Mode"],
-              ["amount_cents", "Amount"],
-              ["created_at", "Created"],
-            ]}
-            formatValue={(key, value, row) =>
-              key === "amount_cents" ? formatMoney(value, row.currency) : value
-            }
-          />
-          <AdminTable
-            title="Transactions"
-            rows={data.transactions || []}
-            columns={[
-              ["user_email", "Email"],
-              ["status", "Status"],
-              ["amount_cents", "Amount"],
-              ["stripe_checkout_session_id", "Checkout session"],
-              ["created_at", "Created"],
-            ]}
-            formatValue={(key, value, row) =>
-              key === "amount_cents" ? formatMoney(value, row.currency) : value
-            }
-          />
-        </div>
-      )}
-    </Panel>
-  );
-}
-
-function AdminTable({ title, rows, columns, formatValue }) {
-  return (
-    <section className="rounded-3xl border border-white/10 bg-white/[0.045] p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="font-semibold text-white">{title}</h3>
-        <span className="rounded-full bg-white/[0.08] px-3 py-1 text-xs text-white/50">
-          {rows.length} rows
-        </span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
-          <thead className="text-xs uppercase tracking-[0.14em] text-white/40">
-            <tr>
-              {columns.map(([, label]) => (
-                <th className="border-b border-white/10 px-3 py-3 font-medium" key={label}>
-                  {label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="text-white/70">
-            {rows.length ? (
-              rows.map((row) => (
-                <tr key={`${title}-${row.id}`} className="border-b border-white/5">
-                  {columns.map(([key]) => (
-                    <td className="max-w-[280px] px-3 py-3 align-top" key={key}>
-                      <span className="line-clamp-3">
-                        {formatAdminValue(formatValue ? formatValue(key, row[key], row) : row[key])}
-                      </span>
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td className="px-3 py-5 text-white/45" colSpan={columns.length}>
-                  No records yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function Panel({ title, description, children }) {
-  return (
-    <section className="liquid-glass rounded-[24px] p-4 sm:rounded-[30px] sm:p-6">
-      <h2 className="text-xl font-semibold sm:text-2xl">{title}</h2>
-      <p className="mt-2 mb-6 text-white/55">{description}</p>
-      {children}
-    </section>
-  );
-}
-
-function Field({ label, value, onChange, type = "text", icon: Icon, min, max, maxLength }) {
-  return (
-    <label className="grid gap-2 text-sm text-white/60">
-      {label}
-      <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.07] px-3">
-        {Icon && <Icon className="w-4 h-4 text-white/40" />}
-        <input
-          className="w-full bg-transparent py-3 outline-none text-white"
-          type={type}
-          min={min}
-          max={max}
-          maxLength={maxLength}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      </div>
-    </label>
-  );
-}
-
-function Toggle({ label, checked, onChange }) {
-  return (
-    <label className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/[0.07] p-4 text-sm text-white/80">
-      {label}
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-      />
-    </label>
-  );
-}
-
-function validateDigestPreferences(prefs) {
-  const hours = Number(prefs.hours);
-  const topDigests = Number(prefs.top_n);
-  const sources = prefs.preferred_sources || [];
-  const kinds = prefs.preferred_kinds || [];
-  const keywords = prefs.keywords || [];
-
-  if (
-    !Number.isInteger(hours) ||
-    hours < validationLimits.minHours ||
-    hours > validationLimits.maxHours
-  ) {
-    return `Please choose a lookback window between ${validationLimits.minHours} and ${validationLimits.maxHours} hours.`;
-  }
-  if (
-    !Number.isInteger(topDigests) ||
-    topDigests < validationLimits.minTopDigests ||
-    topDigests > validationLimits.maxTopDigests
-  ) {
-    return `You can request between ${validationLimits.minTopDigests} and ${validationLimits.maxTopDigests} digests at once.`;
-  }
-  if (!sources.length) {
-    return "Please select at least one source feed before generating a digest.";
-  }
-  if (sources.length > validationLimits.maxSources) {
-    return `Please select no more than ${validationLimits.maxSources} source feeds.`;
-  }
-  if (!kinds.length) {
-    return "Please select at least one content type.";
-  }
-  if (!keywords.length) {
-    return "Please select or add at least one topic keyword.";
-  }
-  if (keywords.length > validationLimits.maxKeywords) {
-    return `Please keep topic keywords to ${validationLimits.maxKeywords} or fewer.`;
-  }
-  if (
-    keywords.some((keyword) => String(keyword).trim().length > validationLimits.maxKeywordLength)
-  ) {
-    return `Each topic keyword must be ${validationLimits.maxKeywordLength} characters or fewer.`;
-  }
-  if (
-    [...sources, ...keywords, ...(prefs.excluded_keywords || [])].some(
-      (value) => !isSafeShortText(value),
-    )
-  ) {
-    return "Sources and keywords can only contain safe text characters. Remove symbols like <, >, quotes, semicolons, or backslashes.";
-  }
-  if (kinds.some((kind) => !["article", "youtube_video"].includes(kind))) {
-    return "Please choose a valid content type.";
-  }
-  return "";
-}
-
-function normalizePreferences(preferences) {
-  const merged = { ...defaultPrefs, ...(preferences || {}) };
-  return {
-    ...merged,
-    hours: clampInteger(merged.hours, 72, validationLimits.minHours, validationLimits.maxHours),
-    top_n: clampInteger(
-      merged.top_n,
-      10,
-      validationLimits.minTopDigests,
-      validationLimits.maxTopDigests,
-    ),
-  };
-}
-
-function clampInteger(value, fallback, min, max) {
-  const number = Number(value);
-  if (!Number.isInteger(number)) return fallback;
-  return Math.min(Math.max(number, min), max);
-}
-
-function validateAccountIdentity(user) {
-  if (!user?.name?.trim())
-    return "Your account name is missing. Please log out and register again.";
-  if (!isValidEmail(user.email))
-    return "Your account email is invalid. Please use a valid email before checkout.";
-  return "";
-}
-
-function validateReviewPayload(payload) {
-  const rating = Number(payload.rating);
-  const text = payload.review_text || "";
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    return "Please choose a star rating between 1 and 5.";
-  }
-  if (text.length > validationLimits.maxReviewLength) {
-    return `Your review must be ${validationLimits.maxReviewLength} characters or fewer.`;
-  }
-  return "";
-}
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
-}
-
-function isSafeShortText(value) {
-  return /^[\w\s.#/+&():,'-]+$/u.test(String(value || "").trim());
-}
-
-function formatDigestDate(value) {
-  if (!value) return "latest undated";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "latest undated";
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatReason(reason) {
-  return String(reason || "")
-    .replace("source:", "source: ")
-    .replace("keyword:", "topic: ")
-    .replace("kind:", "type: ")
-    .replace("ranked_by:", "ranked by ")
-    .replaceAll("_", " ");
-}
-
-function formatAdminValue(value) {
-  if (value === null || value === undefined || value === "") return "-";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "string" && value.includes("T")) {
-    const date = new Date(value);
-    if (!Number.isNaN(date.getTime())) {
-      return date.toLocaleString();
-    }
-  }
-  return String(value);
-}
-
-function formatMoney(cents, currency = "usd") {
-  const amount = Number(cents || 0) / 100;
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: String(currency || "usd").toUpperCase(),
-  }).format(amount);
-}
-
-function formatBackendDetail(detail) {
-  if (!detail) return "";
-  if (typeof detail === "string") return detail;
-  if (Array.isArray(detail)) {
-    return detail
-      .map((item) => {
-        if (typeof item === "string") return item;
-        const location = Array.isArray(item.loc) ? item.loc.join(".") : item.loc;
-        const message = item.msg || item.message || JSON.stringify(item);
-        return location ? `${location}: ${message}` : message;
-      })
-      .join("\n");
-  }
-  return JSON.stringify(detail, null, 2);
-}
-
-function NavButton({ icon: Icon, active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex shrink-0 items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm sm:text-base ${active ? "bg-white text-black" : "text-white/75 hover:bg-white/10"}`}
-    >
-      <Icon className="w-4 h-4" /> {children}
-    </button>
-  );
 }
 
 function App() {
-  const [authMode, setAuthMode] = useState(null);
-  const [infoModal, setInfoModal] = useState(null);
-  const [initialEmail, setInitialEmail] = useState("");
-  const [token, setToken] = useState(() => {
-    const storedToken = localStorage.getItem("asme_token") || "";
-    const lastActive = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || Date.now());
-    if (storedToken && Date.now() - lastActive > IDLE_LOGOUT_MS) {
-      localStorage.removeItem("asme_token");
-      localStorage.removeItem("asme_user");
-      localStorage.removeItem(LAST_ACTIVITY_KEY);
-      return "";
-    }
-    return storedToken;
-  });
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("asme_user") || "null");
-    } catch {
-      return null;
-    }
-  });
-
-  useEffect(() => {
-    if (!token) return;
-    api("/api/auth/me", { token })
-      .then((currentUser) => {
-        localStorage.setItem("asme_user", JSON.stringify(currentUser));
-        setUser(currentUser);
-      })
-      .catch((err) => {
-        if (err.status === 401) {
-          localStorage.removeItem("asme_token");
-          localStorage.removeItem("asme_user");
-          setToken("");
-          setUser(null);
-        }
-      });
-  }, [token]);
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || "");
+  const [user, setUser] = useState(savedUser);
+  const [checking, setChecking] = useState(Boolean(token));
+  const [sessionMessage, setSessionMessage] = useState("");
 
   useEffect(() => {
     if (!token) return undefined;
-    let timer;
-
-    function expireSession() {
-      logout();
-    }
-
-    function resetTimer() {
-      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
-      window.clearTimeout(timer);
-      timer = window.setTimeout(expireSession, IDLE_LOGOUT_MS);
-    }
-
-    function handleVisibilityChange() {
-      if (document.hidden) return;
-      const lastActive = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || Date.now());
-      if (Date.now() - lastActive > IDLE_LOGOUT_MS) {
-        expireSession();
-        return;
-      }
-      resetTimer();
-    }
-
-    const events = ["click", "keydown", "mousemove", "scroll", "touchstart"];
-    events.forEach((eventName) =>
-      window.addEventListener(eventName, resetTimer, { passive: true }),
-    );
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    resetTimer();
-
+    let active = true;
+    api("/api/auth/me", { token })
+      .then((currentUser) => {
+        if (!active) return;
+        localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+        setUser(currentUser);
+        setChecking(false);
+      })
+      .catch((error) => {
+        if (!active) return;
+        if (error.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          setToken("");
+          setUser(null);
+          setSessionMessage("Your session ended. Sign in to continue.");
+        }
+        setChecking(false);
+      });
     return () => {
-      window.clearTimeout(timer);
-      events.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      active = false;
     };
   }, [token]);
 
-  function handleAuth(data) {
-    localStorage.setItem("asme_token", data.token);
-    localStorage.setItem("asme_user", JSON.stringify(data.user));
-    localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+  function finishAuth(data) {
+    localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
-    setAuthMode(null);
+    setSessionMessage("");
   }
 
-  function openAuth(mode, email = "") {
-    setInitialEmail(email);
-    setAuthMode(mode);
-  }
-
-  function logout() {
-    localStorage.removeItem("asme_token");
-    localStorage.removeItem("asme_user");
-    localStorage.removeItem(LAST_ACTIVITY_KEY);
+  function signOut() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     setToken("");
     setUser(null);
   }
 
-  if (user) {
-    return <Dashboard user={user} token={token} onLogout={logout} />;
+  if (checking)
+    return (
+      <main className="auth-page">
+        <div className="loading-mark" role="status">
+          <LoaderCircle size={18} className="spin" />
+          Checking your account
+        </div>
+      </main>
+    );
+  if (user && token) return <ReaderApp user={user} token={token} onSignOut={signOut} />;
+
+  return <AuthScreen message={sessionMessage} onAuth={finishAuth} />;
+}
+
+function AuthScreen({ message, onAuth }) {
+  const [isRegister, setIsRegister] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [notice, setNotice] = useState(message || "");
+  const [pending, setPending] = useState(false);
+
+  async function submit(event) {
+    event.preventDefault();
+    setError("");
+    setFieldErrors({});
+    setNotice("");
+    if (pending) return;
+    const errors = {};
+    if (isRegister && !name.trim()) {
+      errors.name = "Enter your name to create an account.";
+    }
+    if (!email.trim()) {
+      errors.email = "Enter your email address.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errors.email = "Enter a valid email address.";
+    }
+    if (!password) {
+      errors.password = "Enter your password.";
+    } else if (password.length < 6 || password.length > 128) {
+      errors.password = "Use a password between 6 and 128 characters.";
+    }
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      setError("Review the highlighted fields and try again.");
+      window.requestAnimationFrame(() => document.getElementById(Object.keys(errors)[0])?.focus());
+      return;
+    }
+
+    setPending(true);
+    try {
+      const result = await api("/api/auth/" + (isRegister ? "register" : "login"), {
+        method: "POST",
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+      });
+      onAuth(result);
+    } catch (requestError) {
+      setError(
+        requestError.status === 400 && isRegister
+          ? "We couldn't create this account. Check the details or sign in."
+          : requestError.message,
+      );
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function changeMode(nextMode) {
+    setError("");
+    setFieldErrors({});
+    setNotice("");
+    setIsRegister(nextMode === "register");
+  }
+
+  function updateField(field, value, setter) {
+    setter(value);
+    setFieldErrors((current) => ({ ...current, [field]: "" }));
   }
 
   return (
-    <main className="relative app-atmosphere h-screen w-screen flex flex-col overflow-hidden selection:bg-white selection:text-black shrink-0">
-      <BackgroundVideo />
-      <Navbar
-        user={user}
-        onOpenAuth={openAuth}
-        onDashboard={() => openAuth("login")}
-        onOpenInfo={setInfoModal}
-      />
-      <Hero onOpenAuth={openAuth} />
-      {infoModal && (
-        <InfoModal type={infoModal} onClose={() => setInfoModal(null)} onOpenAuth={openAuth} />
-      )}
-      {authMode && (
-        <AuthModal
-          key={authMode}
-          mode={authMode}
-          initialEmail={initialEmail}
-          onClose={() => setAuthMode(null)}
-          onAuth={handleAuth}
-        />
-      )}
+    <main className="auth-page">
+      <div className="auth-topline">
+        <BrandMark />
+        <span className="auth-top-note">A daily paper, made for you</span>
+      </div>
+      <div className="auth-layout">
+        <section className="auth-intro">
+          <div className="issue-stamp">
+            <Sun size={14} />
+            <span>YOUR MORNING EDITION</span>
+          </div>
+          <h1>A clearer start to the day.</h1>
+          <p>
+            Choose what matters to you. The Inkling brings together a personal selection of
+            reporting, research, and ideas from around the world.
+          </p>
+          <div className="auth-proof">
+            <span>
+              <Leaf size={16} /> Chosen around your interests
+            </span>
+            <span>
+              <ExternalLink size={15} /> Always linked to the source
+            </span>
+          </div>
+        </section>
+        <section className="auth-panel" aria-labelledby="auth-title">
+          <p className="eyebrow">READER ACCOUNT</p>
+          <h2 id="auth-title">{isRegister ? "Make it yours" : "Welcome back"}</h2>
+          <p className="auth-panel-copy">
+            {isRegister
+              ? "Create an account to save your topics and daily editions."
+              : "Sign in to open today's paper and your archive."}
+          </p>
+          {notice && (
+            <div className="notice notice-info" role="status">
+              {notice}
+            </div>
+          )}
+          {error && (
+            <div className="notice notice-error" role="alert" id="auth-error">
+              {error}
+            </div>
+          )}
+          <form className="form-stack" onSubmit={submit} noValidate>
+            {isRegister && (
+              <label className="field">
+                <span>Your name</span>
+                <input
+                  id="name"
+                  autoComplete="name"
+                  maxLength={80}
+                  value={name}
+                  onChange={(event) => updateField("name", event.target.value, setName)}
+                  aria-invalid={Boolean(fieldErrors.name)}
+                  aria-describedby={fieldErrors.name ? "name-error" : undefined}
+                />
+                {fieldErrors.name && (
+                  <small className="field-error" id="name-error">
+                    {fieldErrors.name}
+                  </small>
+                )}
+              </label>
+            )}
+            <label className="field">
+              <span>Email address</span>
+              <input
+                id="email"
+                autoComplete="email"
+                type="email"
+                maxLength={254}
+                value={email}
+                onChange={(event) => updateField("email", event.target.value, setEmail)}
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={fieldErrors.email ? "email-error" : undefined}
+              />
+              {fieldErrors.email && (
+                <small className="field-error" id="email-error">
+                  {fieldErrors.email}
+                </small>
+              )}
+            </label>
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <div className="password-control">
+                <input
+                  id="password"
+                  autoComplete={isRegister ? "new-password" : "current-password"}
+                  type={showPassword ? "text" : "password"}
+                  maxLength={128}
+                  value={password}
+                  onChange={(event) => updateField("password", event.target.value, setPassword)}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={
+                    fieldErrors.password
+                      ? "password-error"
+                      : isRegister
+                        ? "password-hint"
+                        : undefined
+                  }
+                />
+                <button
+                  type="button"
+                  aria-pressed={showPassword}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((value) => !value)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              {fieldErrors.password ? (
+                <small className="field-error" id="password-error">
+                  {fieldErrors.password}
+                </small>
+              ) : (
+                isRegister && <small id="password-hint">Use at least 6 characters.</small>
+              )}
+            </div>
+            <button className="button button-primary button-wide" disabled={pending} type="submit">
+              {pending ? "Opening your paper..." : isRegister ? "Create account" : "Sign in"}
+            </button>
+          </form>
+          <p className="auth-switch">
+            {isRegister ? "Already have an account?" : "New to The Inkling?"}
+            <button type="button" onClick={() => changeMode(isRegister ? "login" : "register")}>
+              {isRegister ? "Sign in" : "Create an account"}
+            </button>
+          </p>
+        </section>
+      </div>
+      <footer className="auth-footer">Independent sources. A more considered morning.</footer>
     </main>
   );
 }
 
+function ReaderApp({ user, token, onSignOut }) {
+  const initialTopics = user.preferences?.topics;
+  const [page, setPage] = useState(
+    Array.isArray(initialTopics) && initialTopics.length ? "today" : "topics",
+  );
+  const [preferences, setPreferences] = useState({
+    topics: initialTopics || [],
+    keywords: user.preferences?.keywords || [],
+    excluded_keywords: user.preferences?.excluded_keywords || [],
+    preferred_sources: user.preferences?.preferred_sources || [],
+    top_n: user.preferences?.top_n || 10,
+    use_llm: user.preferences?.use_llm ?? true,
+  });
+  const [topicOptions, setTopicOptions] = useState([]);
+  const [today, setToday] = useState(null);
+  const [selectedEdition, setSelectedEdition] = useState(null);
+  const [archive, setArchive] = useState([]);
+  const [archiveLoaded, setArchiveLoaded] = useState(false);
+  const [archiveRefresh, setArchiveRefresh] = useState(0);
+  const [archiveQuery, setArchiveQuery] = useState("");
+  const [pagePending, setPagePending] = useState(false);
+  const [todayPending, setTodayPending] = useState(true);
+  const [savePending, setSavePending] = useState(false);
+  const [pageError, setPageError] = useState("");
+  const [banner, setBanner] = useState(null);
+  const [retryFeedback, setRetryFeedback] = useState(null);
+  const [savedIds, setSavedIds] = useState(() => new Set());
+  const [hiddenIds, setHiddenIds] = useState(() => new Set());
+  const headingRef = useRef(null);
+
+  const loadToday = useCallback(async () => {
+    try {
+      const result = await api("/api/papers/today", { token });
+      setToday(result.edition);
+      setPageError("");
+    } catch (error) {
+      setPageError(error.message);
+    } finally {
+      setTodayPending(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    let active = true;
+    api("/api/preferences/paper", { token })
+      .then((result) => {
+        if (!active) return;
+        setTopicOptions(result.topics || []);
+        const saved = result.preferences || {};
+        setPreferences((current) => ({
+          ...current,
+          ...saved,
+          topics: saved.topics || current.topics,
+        }));
+      })
+      .catch((error) => {
+        if (active) setBanner({ tone: "error", text: error.message });
+      });
+    const todayTimer = window.setTimeout(loadToday, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(todayTimer);
+    };
+  }, [token, loadToday]);
+
+  useEffect(() => {
+    if (!today || !["queued", "running"].includes(today.status)) return undefined;
+    const timer = window.setInterval(() => {
+      if (!document.hidden) loadToday();
+    }, 3500);
+    return () => window.clearInterval(timer);
+  }, [today, loadToday]);
+
+  useEffect(() => {
+    headingRef.current?.focus({ preventScroll: true });
+  }, [page]);
+
+  useEffect(() => {
+    if (page !== "archive") return undefined;
+    let active = true;
+    const archiveTimer = window.setTimeout(() => {
+      setPagePending(true);
+      api("/api/papers?limit=100", { token })
+        .then((result) => {
+          if (active) {
+            setArchive(result.editions || []);
+            setPageError("");
+          }
+        })
+        .catch((error) => {
+          if (active) setPageError(error.message);
+        })
+        .finally(() => {
+          if (active) {
+            setArchiveLoaded(true);
+            setPagePending(false);
+          }
+        });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(archiveTimer);
+    };
+  }, [page, token, archiveRefresh]);
+
+  const visibleArchive = useMemo(() => {
+    const query = archiveQuery.trim().toLocaleLowerCase();
+    if (!query) return archive;
+    return archive.filter((edition) =>
+      (edition.articles || []).some((article) =>
+        (article.title || "").toLocaleLowerCase().includes(query),
+      ),
+    );
+  }, [archive, archiveQuery]);
+
+  async function createPaper() {
+    if (pagePending) return;
+    setPageError("");
+    setPagePending(true);
+    try {
+      const result = await api("/api/papers", { method: "POST", token });
+      setToday(result);
+      setSelectedEdition(null);
+      setPage("today");
+    } catch (error) {
+      setPageError(error.message);
+    } finally {
+      setPagePending(false);
+    }
+  }
+
+  async function saveTopics(event) {
+    event.preventDefault();
+    if (savePending) return;
+    setPageError("");
+    setSavePending(true);
+    try {
+      const result = await api("/api/preferences/paper", {
+        method: "PUT",
+        token,
+        body: JSON.stringify(preferences),
+      });
+      setPreferences(result.preferences);
+      setBanner({ tone: "success", text: "Your topics are saved." });
+      setPage("today");
+    } catch (error) {
+      setPageError(error.message);
+    } finally {
+      setSavePending(false);
+    }
+  }
+
+  async function openArchiveEdition(editionId) {
+    setPagePending(true);
+    setPageError("");
+    try {
+      const result = await api("/api/papers/" + editionId, { token });
+      setSelectedEdition(result.edition);
+      setPage("today");
+    } catch (error) {
+      setPageError(error.message);
+    } finally {
+      setPagePending(false);
+    }
+  }
+
+  async function submitFeedback(article, action, retry = true) {
+    const edition = selectedEdition || today;
+    if (!edition || !article.id) return false;
+    try {
+      await api("/api/papers/" + edition.id + "/feedback", {
+        method: "POST",
+        token,
+        headers: {
+          "Idempotency-Key": window.crypto?.randomUUID?.() || String(Date.now()) + "-" + article.id,
+        },
+        body: JSON.stringify({ news_item_id: article.id, action }),
+      });
+      if (action === "saved") {
+        setSavedIds((current) => new Set(current).add(article.id));
+        setBanner({ tone: "success", text: "Story saved to your reading signals." });
+      }
+      if (action === "skipped" || action === "dismissed") {
+        setHiddenIds((current) => new Set(current).add(article.id));
+        setBanner({ tone: "success", text: "We'll use that to shape future papers." });
+      }
+      setRetryFeedback(null);
+      return true;
+    } catch (error) {
+      setBanner({ tone: "error", text: error.message });
+      if (retry) setRetryFeedback({ article, action });
+      return false;
+    }
+  }
+
+  function openOriginal(event, article) {
+    event.preventDefault();
+    window.open(article.url, "_blank", "noopener,noreferrer");
+    submitFeedback(article, "opened", false);
+  }
+
+  function destination(nextPage) {
+    setPage(nextPage);
+    setPageError("");
+    if (nextPage === "today") setSelectedEdition(null);
+  }
+
+  const activeEdition = selectedEdition || today;
+  const pageTitle =
+    page === "today"
+      ? selectedEdition
+        ? "From your archive"
+        : "Today's paper"
+      : page === "archive"
+        ? "Your archive"
+        : "Your topics";
+
+  return (
+    <div className="reader-shell">
+      <aside className="reader-spine" aria-label="The Inkling">
+        <BrandMark />
+        <div className="spine-note">A PAPER OF YOUR OWN</div>
+        <nav className="primary-nav" aria-label="Main navigation">
+          <NavItem active={page === "today"} onClick={() => destination("today")} icon={Newspaper}>
+            Today
+          </NavItem>
+          <NavItem
+            active={page === "archive"}
+            onClick={() => destination("archive")}
+            icon={Archive}
+          >
+            Archive
+          </NavItem>
+          <NavItem
+            active={page === "topics"}
+            onClick={() => destination("topics")}
+            icon={Settings2}
+          >
+            My topics
+          </NavItem>
+        </nav>
+        <div className="spine-bottom">
+          <div className="reader-identity">
+            <span className="reader-avatar" aria-hidden="true">
+              {user.name?.slice(0, 1).toUpperCase() || "R"}
+            </span>
+            <span className="reader-name">{user.name || "Reader"}</span>
+          </div>
+          <button className="spine-signout" type="button" onClick={onSignOut}>
+            <LogOut size={15} />
+            <span>Sign out</span>
+          </button>
+          <p className="spine-footer">Independent reading, assembled daily.</p>
+        </div>
+      </aside>
+
+      <div className="reader-main">
+        <header className="paper-topbar">
+          <div className="mobile-brand">
+            <BrandMark compact />
+          </div>
+          <span className="topbar-kicker">A personal morning paper</span>
+          <div className="topbar-date">
+            <Sun size={15} />
+            <span>{formatToday()}</span>
+          </div>
+        </header>
+        <main className="paper-content">
+          <div className="page-heading-row">
+            <div>
+              <p className="eyebrow">THE INKLING / PERSONAL EDITION</p>
+              <h1 ref={headingRef} tabIndex={-1}>
+                {pageTitle}
+              </h1>
+            </div>
+            {page === "today" && (
+              <button
+                className="button button-outline build-button"
+                type="button"
+                onClick={selectedEdition ? () => setSelectedEdition(null) : createPaper}
+                disabled={pagePending || (today?.status === "ready" && !selectedEdition)}
+              >
+                {pagePending ? (
+                  <LoaderCircle className="spin" size={16} />
+                ) : selectedEdition ? (
+                  <Newspaper size={15} />
+                ) : (
+                  <RefreshCw size={15} />
+                )}
+                {selectedEdition
+                  ? "Return to today"
+                  : today?.status === "ready"
+                    ? "Today's edition is ready"
+                    : "Build today's paper"}
+              </button>
+            )}
+          </div>
+
+          {banner && (
+            <div
+              className={"notice notice-" + banner.tone}
+              role={banner.tone === "error" ? "alert" : "status"}
+            >
+              <span>{banner.text}</span>
+              {retryFeedback && (
+                <button
+                  type="button"
+                  className="notice-action"
+                  onClick={() => submitFeedback(retryFeedback.article, retryFeedback.action)}
+                >
+                  Retry
+                </button>
+              )}
+              <button
+                className="notice-close"
+                type="button"
+                aria-label="Dismiss message"
+                onClick={() => setBanner(null)}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
+          {pageError && (
+            <div className="notice notice-error" role="alert">
+              <CircleAlert size={17} />
+              <span>{pageError}</span>
+              <button
+                className="notice-action"
+                type="button"
+                onClick={() => {
+                  if (page === "archive") {
+                    setArchiveLoaded(false);
+                    setArchiveRefresh((current) => current + 1);
+                  } else {
+                    loadToday();
+                  }
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {page === "today" && (
+            <TodayPage
+              edition={activeEdition}
+              isLoading={todayPending && !activeEdition}
+              isBuilding={pagePending}
+              topics={preferences.topics || []}
+              onCreate={createPaper}
+              onOpenOriginal={openOriginal}
+              onFeedback={submitFeedback}
+              savedIds={savedIds}
+              hiddenIds={hiddenIds}
+            />
+          )}
+          {page === "archive" && (
+            <ArchivePage
+              editions={visibleArchive}
+              query={archiveQuery}
+              onQueryChange={setArchiveQuery}
+              pending={pagePending || !archiveLoaded}
+              onOpen={openArchiveEdition}
+            />
+          )}
+          {page === "topics" && (
+            <TopicsPage
+              preferences={preferences}
+              setPreferences={setPreferences}
+              options={topicOptions}
+              pending={savePending}
+              onSave={saveTopics}
+            />
+          )}
+        </main>
+        <footer className="paper-footer">
+          <span>THE INKLING</span>
+          <span>Independent sources, in one considered edition.</span>
+        </footer>
+      </div>
+
+      <nav className="mobile-nav" aria-label="Main navigation">
+        <NavItem active={page === "today"} onClick={() => destination("today")} icon={Newspaper}>
+          Today
+        </NavItem>
+        <NavItem active={page === "archive"} onClick={() => destination("archive")} icon={Archive}>
+          Archive
+        </NavItem>
+        <NavItem active={page === "topics"} onClick={() => destination("topics")} icon={Settings2}>
+          Topics
+        </NavItem>
+      </nav>
+    </div>
+  );
+}
+
+function TodayPage({
+  edition,
+  isLoading,
+  isBuilding,
+  topics,
+  onCreate,
+  onOpenOriginal,
+  onFeedback,
+  savedIds,
+  hiddenIds,
+}) {
+  if (isLoading)
+    return (
+      <div className="paper-state" role="status">
+        <LoaderCircle className="spin" size={18} />
+        Looking for today's edition
+      </div>
+    );
+  if (!edition)
+    return (
+      <section className="empty-paper">
+        <div className="issue-stamp">
+          <Sun size={14} />
+          <span>FRESH FROM YOUR DESK</span>
+        </div>
+        <h2>A good morning starts with what matters to you.</h2>
+        <p>
+          {topics.length
+            ? "Your topics are ready. Build a paper and we'll gather the latest stories for you."
+            : "Choose a few subjects first. Your paper will grow more personal as you read and respond."}
+        </p>
+        <button
+          className="button button-primary"
+          type="button"
+          onClick={onCreate}
+          disabled={isBuilding}
+        >
+          {isBuilding ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}
+          {isBuilding ? "Preparing today's paper" : "Build today's paper"}
+        </button>
+      </section>
+    );
+  if (edition.status === "queued" || edition.status === "running")
+    return (
+      <section className="progress-paper" aria-live="polite">
+        <div className="issue-stamp">
+          <Clock3 size={14} />
+          <span>{edition.status === "queued" ? "IN THE PRESS QUEUE" : "BEING PUT TOGETHER"}</span>
+        </div>
+        <h2>Your paper is taking shape.</h2>
+        <p>
+          We are gathering stories around your interests. You can visit your topics or archive while
+          the edition is prepared.
+        </p>
+        <div className="progress-track">
+          <span />
+        </div>
+        <p className="progress-caption">
+          <LoaderCircle className="spin" size={14} />
+          This page will update when the edition is ready.
+        </p>
+      </section>
+    );
+  if (edition.status === "failed")
+    return (
+      <section className="empty-paper">
+        <div className="issue-stamp issue-stamp-muted">
+          <CircleAlert size={14} />
+          <span>THE PRESS NEEDS ANOTHER TRY</span>
+        </div>
+        <h2>Today's paper did not finish.</h2>
+        <p>Your topics are saved. Try again in a moment.</p>
+        <button className="button button-primary" type="button" onClick={onCreate}>
+          Try again
+        </button>
+      </section>
+    );
+
+  const articles = (edition.articles || []).filter((article) => !hiddenIds.has(article.id));
+  if (!articles.length)
+    return (
+      <section className="empty-paper">
+        <div className="issue-stamp">
+          <Newspaper size={14} />
+          <span>EDITION READY</span>
+        </div>
+        <h2>Today's page is still blank.</h2>
+        <p>
+          We couldn't find enough recent stories in these subjects yet. Try a wider set of topics
+          later.
+        </p>
+      </section>
+    );
+
+  const [lead, ...rest] = articles;
+  return (
+    <div className="edition">
+      <div className="edition-meta">
+        <span className="issue-stamp">
+          <Sun size={14} />
+          <span>YOUR MORNING EDITION</span>
+        </span>
+        <span className="edition-date">{formatDateOnly(edition.date)}</span>
+      </div>
+      <section className="lead-layout" aria-labelledby="lead-title">
+        <article className="lead-story">
+          <p className="story-overline">
+            <span className="lead-dot" /> LEAD STORY <span className="overline-divider">/</span>{" "}
+            {lead.source}
+          </p>
+          <h2 id="lead-title" className="lead-headline">
+            {lead.title}
+          </h2>
+          <p className="lead-summary">
+            {lead.summary || "Open the original story for the full report and details."}
+          </p>
+          <div className="story-actions">
+            <a
+              className="button button-primary"
+              href={lead.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(event) => onOpenOriginal(event, lead)}
+            >
+              Read the original <ArrowUpRight size={16} />
+            </a>
+            <ArticleActions article={lead} onFeedback={onFeedback} saved={savedIds.has(lead.id)} />
+          </div>
+        </article>
+        <aside className="edition-note">
+          <div className="note-icon">
+            <Leaf size={18} />
+          </div>
+          <p className="eyebrow">A PAPER OF YOUR OWN</p>
+          <p>
+            Selected around {topics.slice(0, 3).join(", ") || "the wider world"}. Follow the source
+            whenever a story catches your eye.
+          </p>
+          <div className="note-rule" />
+          <span>
+            {articles.length} {articles.length === 1 ? "story" : "stories"} in this edition
+          </span>
+        </aside>
+      </section>
+      {rest.length > 0 && (
+        <section className="latest-section" aria-labelledby="latest-heading">
+          <div className="section-rule-heading">
+            <h2 id="latest-heading">More from your edition</h2>
+            <span>{rest.length} STORIES</span>
+          </div>
+          <div className="story-grid">
+            {rest.map((article, index) => (
+              <StoryCard
+                key={article.id || article.url}
+                article={article}
+                index={index + 2}
+                onOpenOriginal={onOpenOriginal}
+                onFeedback={onFeedback}
+                saved={savedIds.has(article.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+      <div className="edition-endnote">
+        <span className="endnote-rule" />
+        <p>{edition.editorial || "Every story links back to its original publisher."}</p>
+        <span className="endnote-rule" />
+      </div>
+    </div>
+  );
+}
+
+function StoryCard({ article, index, onOpenOriginal, onFeedback, saved }) {
+  return (
+    <article className="story-card">
+      <div className="story-meta">
+        <span>{article.source}</span>
+        {article.published_at && (
+          <time dateTime={article.published_at}>{formatStoryDate(article.published_at)}</time>
+        )}
+      </div>
+      <h3>
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(event) => onOpenOriginal(event, article)}
+        >
+          {article.title}
+        </a>
+      </h3>
+      <p>{article.summary || "Read the source report for the full story."}</p>
+      <div className="story-card-actions">
+        <a
+          className="text-link"
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(event) => onOpenOriginal(event, article)}
+        >
+          Read story <ArrowUpRight size={14} />
+        </a>
+        <ArticleActions article={article} onFeedback={onFeedback} saved={saved} />
+      </div>
+      <span className="sr-only">Story {index}</span>
+    </article>
+  );
+}
+
+function ArticleActions({ article, onFeedback, saved }) {
+  const [pending, setPending] = useState("");
+  async function submit(action) {
+    if (pending || (saved && action === "saved")) return;
+    setPending(action);
+    await onFeedback(article, action);
+    setPending("");
+  }
+  return (
+    <div className="article-actions">
+      <button
+        className="quiet-action"
+        type="button"
+        onClick={() => submit("saved")}
+        disabled={pending || saved}
+        aria-label={saved ? "Story saved" : "Save story"}
+      >
+        {pending === "saved" ? (
+          <LoaderCircle className="spin" size={15} />
+        ) : saved ? (
+          <Check size={15} />
+        ) : (
+          <Bookmark size={15} />
+        )}
+        <span>{saved ? "Saved" : "Save"}</span>
+      </button>
+      <button
+        className="quiet-action"
+        type="button"
+        onClick={() => submit("skipped")}
+        disabled={Boolean(pending)}
+        aria-label="Skip this story"
+      >
+        {pending === "skipped" ? (
+          <LoaderCircle className="spin" size={15} />
+        ) : (
+          <ArrowDownRight size={15} />
+        )}
+        <span>Skip</span>
+      </button>
+    </div>
+  );
+}
+
+function ArchivePage({ editions, query, onQueryChange, pending, onOpen }) {
+  return (
+    <section className="archive-page" aria-label="Newspaper archive">
+      <div className="archive-intro">
+        <p className="eyebrow">KEPT FOR ANOTHER MORNING</p>
+        <p>Reopen a past edition and return to the stories you meant to read.</p>
+      </div>
+      <label className="search-field">
+        <Search size={17} />
+        <span className="sr-only">Search archived stories</span>
+        <input
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          placeholder="Find a story in your archive"
+          type="search"
+        />
+        {query && (
+          <button type="button" aria-label="Clear archive search" onClick={() => onQueryChange("")}>
+            <X size={15} />
+          </button>
+        )}
+      </label>
+      {pending && (
+        <div className="paper-state" role="status">
+          <LoaderCircle className="spin" size={18} />
+          Opening your archive
+        </div>
+      )}
+      {!pending && editions.length === 0 && (
+        <div className="archive-empty">
+          <Archive size={24} />
+          <h2>{query ? "No story matches that search." : "Your archive is waiting."}</h2>
+          <p>
+            {query
+              ? "Try another title or clear your search."
+              : "When you make your first paper, it will be kept here."}
+          </p>
+        </div>
+      )}
+      {editions.length > 0 && (
+        <div className="archive-list">
+          {editions.map((edition) => (
+            <article className="archive-row" key={edition.id}>
+              <div className="archive-date">
+                <span>{formatMonth(edition.date)}</span>
+                <strong>{formatDay(edition.date)}</strong>
+                <small>{formatYear(edition.date)}</small>
+              </div>
+              <div className="archive-edition-copy">
+                <p className="eyebrow">
+                  {edition.status === "ready" ? "MORNING EDITION" : edition.status.toUpperCase()}
+                </p>
+                <h2>{edition.title || "The Inkling"}</h2>
+                <p>
+                  {(edition.articles || []).length} stories <span className="dot-divider">·</span>{" "}
+                  {formatWeekday(edition.date)}
+                </p>
+              </div>
+              <button
+                className="button button-outline archive-open"
+                type="button"
+                onClick={() => onOpen(edition.id)}
+                disabled={pending || edition.status !== "ready"}
+              >
+                Open edition <ChevronRight size={16} />
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function TopicsPage({ preferences, setPreferences, options, pending, onSave }) {
+  const topicSet = new Set(preferences.topics || []);
+  const knownOptions = options.length ? options : TOPIC_GROUPS.flatMap((group) => group.topics);
+  const groups = TOPIC_GROUPS.map((group) => ({
+    ...group,
+    topics: group.topics.filter((topic) => knownOptions.includes(topic)),
+  })).filter((group) => group.topics.length);
+
+  function toggle(topic) {
+    setPreferences((current) => {
+      const selected = new Set(current.topics || []);
+      if (selected.has(topic)) selected.delete(topic);
+      else selected.add(topic);
+      return { ...current, topics: Array.from(selected) };
+    });
+  }
+
+  return (
+    <section className="topics-page">
+      <div className="topics-intro">
+        <div className="issue-stamp">
+          <Settings2 size={14} />
+          <span>YOUR EDITORIAL DESK</span>
+        </div>
+        <h2>Choose what belongs in your morning.</h2>
+        <p>
+          Pick a few subjects. Your edition will draw from trusted sources and keep every story
+          linked to its publisher.
+        </p>
+      </div>
+      <form onSubmit={onSave} noValidate>
+        <div className="topic-groups">
+          {groups.map((group) => (
+            <fieldset className="topic-group" key={group.title}>
+              <legend>{group.title}</legend>
+              <div className="topic-options">
+                {group.topics.map((topic) => (
+                  <label
+                    className={topicSet.has(topic) ? "topic-option is-selected" : "topic-option"}
+                    key={topic}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={topicSet.has(topic)}
+                      onChange={() => toggle(topic)}
+                    />
+                    <span>{titleCase(topic)}</span>
+                    {topicSet.has(topic) && <Check size={15} aria-hidden="true" />}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+        </div>
+
+        <div className="editorial-controls">
+          <div>
+            <h3>How many stories?</h3>
+            <p>Keep your edition short enough for a morning read.</p>
+          </div>
+          <div className="count-control" role="group" aria-label="Number of stories">
+            <button
+              type="button"
+              aria-label="Show fewer stories"
+              disabled={preferences.top_n <= 5}
+              onClick={() =>
+                setPreferences({ ...preferences, top_n: Math.max(5, preferences.top_n - 1) })
+              }
+            >
+              −
+            </button>
+            <span>{preferences.top_n}</span>
+            <button
+              type="button"
+              aria-label="Show more stories"
+              disabled={preferences.top_n >= 20}
+              onClick={() =>
+                setPreferences({ ...preferences, top_n: Math.min(20, preferences.top_n + 1) })
+              }
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <label className="switch-row">
+          <span>
+            <strong>Polish headlines and summaries</strong>
+            <small>Use the configured language model to edit publisher text carefully.</small>
+          </span>
+          <input
+            type="checkbox"
+            checked={preferences.use_llm !== false}
+            onChange={(event) => setPreferences({ ...preferences, use_llm: event.target.checked })}
+          />
+        </label>
+        <div className="topic-save-row">
+          <p>
+            <Leaf size={15} />
+            Your choices stay with your account.
+          </p>
+          <button className="button button-primary" type="submit" disabled={pending}>
+            {pending ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}
+            {pending ? "Saving topics" : "Save my topics"}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+function NavItem({ active, onClick, icon: Icon, children }) {
+  return (
+    <button
+      className={active ? "nav-item is-active" : "nav-item"}
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+    >
+      <Icon size={18} strokeWidth={1.7} aria-hidden="true" />
+      <span>{children}</span>
+    </button>
+  );
+}
+
+function BrandMark({ compact = false }) {
+  return (
+    <div className={compact ? "brand-mark brand-compact" : "brand-mark"}>
+      <span className="brand-symbol" aria-hidden="true">
+        i
+      </span>
+      <span className="brand-word">
+        the inkling<span className="brand-period">.</span>
+      </span>
+    </div>
+  );
+}
+
+function formatToday() {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
+}
+function parseDateOnly(value) {
+  const [year, month, day] = String(value || "")
+    .split("-")
+    .map(Number);
+  return year && month && day ? new Date(year, month - 1, day, 12) : new Date();
+}
+function formatDateOnly(value) {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(parseDateOnly(value));
+}
+function formatMonth(value) {
+  return new Intl.DateTimeFormat("en-US", { month: "short" })
+    .format(parseDateOnly(value))
+    .toUpperCase();
+}
+function formatDay(value) {
+  return new Intl.DateTimeFormat("en-US", { day: "2-digit" }).format(parseDateOnly(value));
+}
+function formatYear(value) {
+  return new Intl.DateTimeFormat("en-US", { year: "numeric" }).format(parseDateOnly(value));
+}
+function formatWeekday(value) {
+  return new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(parseDateOnly(value));
+}
+function formatStoryDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+}
+function titleCase(value) {
+  return value.replace(/\b\w/g, (character) => character.toUpperCase());
+}
+function formatMessage(detail) {
+  if (typeof detail === "string") return detail;
+  if (detail && typeof detail === "object") {
+    if (detail.message) return detail.message;
+    if (Array.isArray(detail.errors)) return detail.errors.join(" ");
+  }
+  return "The request could not be completed. Please try again.";
+}
+
 async function api(path, options = {}) {
-  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-  if (options.token) headers.Authorization = `Bearer ${options.token}`;
+  const { token, headers: extraHeaders = {}, body, ...requestOptions } = options;
+  const headers = { Accept: "application/json", ...extraHeaders };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (token) headers.Authorization = "Bearer " + token;
   const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-  const url = path.startsWith("http") ? path : `${apiBase}${path}`;
+
   let response;
   try {
-    response = await fetch(url, { ...options, headers });
-  } catch (err) {
-    throw new Error(
-      [
-        "Network request failed before the backend returned a response.",
-        `Request: ${options.method || "GET"} ${url || path}`,
-        `Configured API base: ${apiBase || "(empty, using same domain)"}`,
-        `Frontend origin: ${window.location.origin}`,
-        `Backend health URL: ${(apiBase || window.location.origin).replace(/\/$/, "")}/api/health`,
-        `Browser error: ${err.message}`,
-        "Likely causes: wrong VITE_API_BASE_URL, backend is down/asleep, HTTPS/CORS is blocked, or Render CORS_ORIGINS does not include this exact frontend URL.",
-      ].join("\n"),
-      { cause: err },
-    );
-  }
-
-  const responseText = await response.text();
-  let data;
-  try {
-    data = responseText ? JSON.parse(responseText) : {};
+    response = await fetch(apiBase + path, { ...requestOptions, headers, body });
   } catch {
-    data = { detail: responseText };
-  }
-
-  if (!response.ok) {
-    const backendDetail = formatBackendDetail(data.detail);
     const error = new Error(
-      [
-        `Backend returned HTTP ${response.status} ${response.statusText}.`,
-        `Request: ${options.method || "GET"} ${url || path}`,
-        backendDetail ? `Backend detail:\n${backendDetail}` : null,
-        responseText && !data.detail ? `Response body: ${responseText.slice(0, 600)}` : null,
-      ]
-        .filter(Boolean)
-        .join("\n"),
+      "The service could not be reached. Check your connection and try again.",
     );
-    error.status = response.status;
-    error.data = data;
+    error.status = 0;
     throw error;
   }
-  return data;
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    let message = formatMessage(result.detail);
+    if (response.status === 429) message = "Too many attempts. Please wait a moment and try again.";
+    if (response.status >= 500)
+      message = "The service is having trouble. Please try again shortly.";
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return result;
 }
 
 createRoot(document.getElementById("root")).render(<App />);

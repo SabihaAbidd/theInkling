@@ -1,7 +1,8 @@
-"""Generic website and RSS scraping helpers for AI news sources."""
+"""Generic website and RSS scraping helpers for curated news sources."""
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from html import unescape
@@ -15,8 +16,9 @@ from .models import Article, NewsSource
 from .sources import SOURCES
 
 DEFAULT_TIMEOUT = 20
+logger = logging.getLogger(__name__)
 HEADERS = {
-    "User-Agent": "ai-news-aggregator/0.1 (+https://example.com/bot)",
+    "User-Agent": "TheInkling/1.0 (personalized news reader)",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
@@ -26,7 +28,7 @@ def scrape_all_sources(
     max_sources: int | None = None,
     source_names: list[str] | tuple[str, ...] | None = None,
 ) -> list[Article]:
-    """Scrape every configured AI news source."""
+    """Scrape every configured curated news source."""
 
     if limit_per_source <= 0:
         return []
@@ -47,7 +49,7 @@ def scrape_all_sources(
         try:
             articles.extend(scrape_source(source, limit=limit_per_source))
         except Exception as exc:
-            print(f"Skipping {source.name}: {exc}")
+            logger.warning("Skipping source %s: %s", source.name, exc)
     return dedupe_articles(articles)
 
 
@@ -67,7 +69,13 @@ def scrape_source(source: NewsSource, limit: int = 10) -> list[Article]:
 def scrape_feed(source: NewsSource, limit: int = 10) -> list[Article]:
     """Read articles from an RSS or Atom feed."""
 
-    parsed = feedparser.parse(source.feed_url or source.url)
+    response = requests.get(
+        source.feed_url or source.url,
+        headers=HEADERS,
+        timeout=DEFAULT_TIMEOUT,
+    )
+    response.raise_for_status()
+    parsed = feedparser.parse(response.content)
     articles: list[Article] = []
     for entry in parsed.entries[:limit]:
         title = clean_text(getattr(entry, "title", ""))

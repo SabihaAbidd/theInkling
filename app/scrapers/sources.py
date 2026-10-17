@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
+from .general_sources import GENERAL_SOURCES
 from .models import NewsSource
 
-SOURCES: tuple[NewsSource, ...] = (
+AI_SOURCES: tuple[NewsSource, ...] = (
     NewsSource(
         "OpenAI News",
         "https://openai.com/news/",
@@ -651,8 +654,28 @@ SOURCES: tuple[NewsSource, ...] = (
     NewsSource("MLCommons News", "https://mlcommons.org/news/", "policy"),
 )
 
+AI_SOURCES = tuple(
+    replace(source, topics=tuple(dict.fromkeys((*source.topics, "technology", "ai"))))
+    for source in AI_SOURCES
+)
+SOURCES: tuple[NewsSource, ...] = (*GENERAL_SOURCES, *AI_SOURCES)
+
 
 def sources_by_category(category: str) -> tuple[NewsSource, ...]:
     """Return all configured sources in a category."""
 
     return tuple(source for source in SOURCES if source.category == category)
+
+
+def sources_for_topics(topics: list[str] | tuple[str, ...]) -> tuple[NewsSource, ...]:
+    """Select sources tagged for reader topics, with broad news for cold starts."""
+
+    normalized = {topic.strip().casefold() for topic in topics if topic.strip()}
+    if not normalized:
+        normalized = {"world", "business", "technology", "science"}
+    selected = tuple(
+        source
+        for source in SOURCES
+        if normalized.intersection(topic.casefold() for topic in source.topics)
+    )
+    return selected or GENERAL_SOURCES

@@ -8,12 +8,13 @@ from datetime import datetime
 
 @dataclass(frozen=True)
 class NewsSource:
-    """A website or feed to scrape for AI-related news."""
+    """A curated publication feed and the reader interests it can serve."""
 
     name: str
     url: str
     category: str
     feed_url: str | None = None
+    topics: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

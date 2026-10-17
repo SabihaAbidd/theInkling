@@ -105,7 +105,9 @@ def rank_with_llm(
             "title": item.title,
             "summary": item.summary,
             "url": item.url,
-            "published_at": item.published_at.isoformat() if item.published_at else None,
+            "published_at": item.published_at.isoformat()
+            if item.published_at
+            else None,
             "deterministic_score": item.score,
             "deterministic_reasons": list(item.matched_reasons),
         }

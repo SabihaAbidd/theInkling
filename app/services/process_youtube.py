@@ -1,4 +1,4 @@
-﻿"""Process YouTube channel videos returned by the YouTube scraper."""
+"""Process YouTube channel videos returned by the YouTube scraper."""
 
 from __future__ import annotations
 

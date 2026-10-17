@@ -1,4 +1,4 @@
-﻿"""Anthropic news scraper."""
+"""Anthropic news scraper."""
 
 from __future__ import annotations
 

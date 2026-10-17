@@ -1,4 +1,4 @@
-﻿"""Process articles returned by website scrapers."""
+"""Process articles returned by website scrapers."""
 
 from __future__ import annotations
 

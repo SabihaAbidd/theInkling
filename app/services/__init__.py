@@ -1,12 +1,12 @@
-﻿"""Services package exports."""
+"""Services package exports."""
 
-from .models import ProcessedItem
 from .aggregator_surface import (
     build_aggregated_markdown,
     get_aggregated_digest,
     get_aggregated_digest_response,
     get_top_digests,
 )
+from .models import ProcessedItem
 from .news_surface import (
     collect_ai_digest,
     collect_ai_news,

@@ -18,7 +18,9 @@ def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    parser = argparse.ArgumentParser(description="Preview or send a daily AI news email.")
+    parser = argparse.ArgumentParser(
+        description="Preview or send a daily AI news email."
+    )
     parser.add_argument("--name", default="Sample User")
     parser.add_argument("--to", help="Stored user Gmail address.")
     parser.add_argument("--profile", default=None)
@@ -26,7 +28,9 @@ def main() -> None:
     parser.add_argument("--top-n", type=int, default=10)
     parser.add_argument("--no-llm", action="store_true")
     parser.add_argument("--html", action="store_true")
-    parser.add_argument("--send", action="store_true", help="Send the email via Gmail SMTP.")
+    parser.add_argument(
+        "--send", action="store_true", help="Send the email via Gmail SMTP."
+    )
     args = parser.parse_args()
 
     if args.send:

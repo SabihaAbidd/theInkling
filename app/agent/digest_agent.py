@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
-from app.database.models import NewsItem
 from app.agent.llm_client import default_model, default_provider, generate_json
+from app.database.models import NewsItem
 
 load_dotenv()
 
@@ -20,6 +21,7 @@ Write a concise, factual title and a two to three sentence summary.
 Prefer concrete details from the source item. Do not invent facts.
 If the source item is weak or navigation-like, summarize only what is clearly present.
 """
+
 
 @dataclass(frozen=True)
 class DigestAgentResult:

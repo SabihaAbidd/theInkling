@@ -1,4 +1,4 @@
-﻿"""Facade service for scraping, processing, curating, and digesting news."""
+"""Facade service for scraping, processing, curating, and digesting news."""
 
 from __future__ import annotations
 

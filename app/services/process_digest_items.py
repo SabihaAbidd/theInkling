@@ -49,7 +49,9 @@ def process_digest_items(
     created_or_updated = 0
     failed = 0
     stopped_reason: str | None = None
-    llm_status: str | None = classify_llm_error(str(agent_error)) if agent_error else None
+    llm_status: str | None = (
+        classify_llm_error(str(agent_error)) if agent_error else None
+    )
 
     with get_session() as session:
         news_items = list_news_items_without_digest(

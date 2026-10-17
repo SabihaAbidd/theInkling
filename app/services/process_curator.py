@@ -1,4 +1,4 @@
-﻿"""Curate processed items for AI-news relevance."""
+"""Curate processed items for AI-news relevance."""
 
 from __future__ import annotations
 

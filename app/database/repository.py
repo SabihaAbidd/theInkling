@@ -301,7 +301,9 @@ def activate_payment_subscription(
     now = datetime.now(UTC)
     subscription.status = "active"
     subscription.started_at = subscription.started_at or now
-    subscription.stripe_customer_id = stripe_customer_id or subscription.stripe_customer_id
+    subscription.stripe_customer_id = (
+        stripe_customer_id or subscription.stripe_customer_id
+    )
     subscription.stripe_subscription_id = (
         stripe_subscription_id or subscription.stripe_subscription_id
     )

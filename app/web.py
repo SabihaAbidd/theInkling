@@ -34,9 +34,9 @@ from app.database.repository import (
     get_user,
     get_user_by_email,
     list_site_reviews,
-    upsert_user,
-    upsert_site_review,
     update_user_preferences,
+    upsert_site_review,
+    upsert_user,
 )
 from app.profiles.user_profile import PROFILES, UserProfile, get_profile
 from app.scrapers.youtube_channels import YOUTUBE_CHANNEL_IDS
@@ -118,14 +118,18 @@ async def validation_exception_handler(
 
     messages = []
     for error in exc.errors():
-        location = ".".join(str(part) for part in error.get("loc", []) if part != "body")
+        location = ".".join(
+            str(part) for part in error.get("loc", []) if part != "body"
+        )
         message = error.get("msg", "Invalid value.")
         messages.append(f"{location}: {message}" if location else message)
     return JSONResponse(
         status_code=422,
         content={
             "detail": {
-                "message": "Please fix the highlighted request values before trying again.",
+                "message": (
+                    "Please fix the highlighted request values before trying again."
+                ),
                 "errors": messages,
             }
         },
@@ -198,7 +202,9 @@ def clean_public_text(value: str | None, field_name: str, max_length: int) -> st
         raise ValueError(f"{field_name} must be {max_length} characters or fewer.")
     if any(character in text_value for character in "<>"):
         raise ValueError(f"{field_name} cannot contain HTML markup.")
-    if any(ord(character) < 32 and character not in "\n\r\t" for character in text_value):
+    if any(
+        ord(character) < 32 and character not in "\n\r\t" for character in text_value
+    ):
         raise ValueError(f"{field_name} contains unsupported control characters.")
     return text_value
 
@@ -219,7 +225,10 @@ class DigestRequest(BaseModel):
     @field_validator("profile_name")
     @classmethod
     def validate_profile_name(cls, value: str | None) -> str:
-        return clean_optional_limited_text(value, "Profile name", 80) or "default_ai_reader"
+        return (
+            clean_optional_limited_text(value, "Profile name", 80)
+            or "default_ai_reader"
+        )
 
     @field_validator("preferred_sources")
     @classmethod
@@ -554,7 +563,9 @@ def admin_overview(user=Depends(current_user)) -> dict:
             or 0
         )
         amount_cents = (
-            session.scalar(select(func.coalesce(func.sum(PaymentTransaction.amount_cents), 0)))
+            session.scalar(
+                select(func.coalesce(func.sum(PaymentTransaction.amount_cents), 0))
+            )
             or 0
         )
 
@@ -739,7 +750,8 @@ def dashboard_digests(request: DigestRequest, user=Depends(current_user)) -> dic
         if response.fallback_reason and llm_status is None:
             llm_status = classify_llm_error(response.fallback_reason)
         payload["llm_status"] = {
-            "status": llm_status or ("ok" if response.ranking_method == "llm" else None),
+            "status": llm_status
+            or ("ok" if response.ranking_method == "llm" else None),
             "message": llm_status_message(llm_status),
             "fallback_reason": response.fallback_reason,
         }
@@ -835,7 +847,7 @@ def checkout(request: CheckoutRequest, http_request: Request) -> dict:
                 email=request.email,
                 profile_name="default_ai_reader",
             )
-            subscription = create_payment_subscription(
+            create_payment_subscription(
                 session=session,
                 user=user,
                 plan_name=checkout_session["plan_name"],
@@ -936,11 +948,7 @@ def admin_emails() -> set[str]:
     """Return configured admin emails from environment."""
 
     configured = os.getenv("ADMIN_EMAILS", "")
-    return {
-        email.strip().lower()
-        for email in configured.split(",")
-        if email.strip()
-    }
+    return {email.strip().lower() for email in configured.split(",") if email.strip()}
 
 
 def is_admin_user(user) -> bool:
@@ -1070,7 +1078,8 @@ def merge_saved_preferences(request: DigestRequest, saved: dict) -> DigestReques
         top_n=request.top_n or int(saved.get("top_n", 10)),
         profile_name=request.profile_name or saved.get("profile_name"),
         use_llm=request.use_llm,
-        preferred_sources=request.preferred_sources or saved.get("preferred_sources", []),
+        preferred_sources=request.preferred_sources
+        or saved.get("preferred_sources", []),
         preferred_kinds=request.preferred_kinds or saved.get("preferred_kinds", []),
         keywords=request.keywords or saved.get("keywords", []),
         excluded_keywords=request.excluded_keywords
@@ -1088,7 +1097,9 @@ def complete_checkout_success(session_id: str) -> str:
         checkout_payload=checkout_payload,
         send_email=True,
     )
-    return f"Subscription activated and a demo digest email was sent to {email_address}."
+    return (
+        f"Subscription activated and a demo digest email was sent to {email_address}."
+    )
 
 
 def fulfill_checkout_session(
@@ -1098,15 +1109,15 @@ def fulfill_checkout_session(
 ) -> str:
     """Activate a subscription and optionally send the demo digest email."""
 
-    stripe_customer_id = getattr(checkout_payload, "customer", None) or checkout_payload.get(
-        "customer"
-    )
+    stripe_customer_id = getattr(
+        checkout_payload, "customer", None
+    ) or checkout_payload.get("customer")
     stripe_subscription_id = getattr(
         checkout_payload, "subscription", None
     ) or checkout_payload.get("subscription")
-    setup_intent_id = getattr(checkout_payload, "setup_intent", None) or checkout_payload.get(
-        "setup_intent"
-    )
+    setup_intent_id = getattr(
+        checkout_payload, "setup_intent", None
+    ) or checkout_payload.get("setup_intent")
     payload_dict = (
         checkout_payload.to_dict()
         if hasattr(checkout_payload, "to_dict")
@@ -1118,7 +1129,9 @@ def fulfill_checkout_session(
             checkout_session_id=checkout_session_id,
         )
         if subscription is None:
-            raise RuntimeError("Checkout succeeded, but no local subscription row was found.")
+            raise RuntimeError(
+                "Checkout succeeded, but no local subscription row was found."
+            )
 
         activate_payment_subscription(
             session=session,

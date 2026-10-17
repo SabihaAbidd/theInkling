@@ -6,7 +6,11 @@ import argparse
 import sys
 
 from app.database.connection import get_session
-from app.database.repository import list_active_users, upsert_user, validate_gmail_address
+from app.database.repository import (
+    list_active_users,
+    upsert_user,
+    validate_gmail_address,
+)
 
 
 def main() -> None:
@@ -16,7 +20,9 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
 
     parser = argparse.ArgumentParser(description="Manage AI news user accounts.")
-    parser.add_argument("--create", action="store_true", help="Create or update a user.")
+    parser.add_argument(
+        "--create", action="store_true", help="Create or update a user."
+    )
     parser.add_argument("--list", action="store_true", help="List active users.")
     parser.add_argument("--name", help="User display name.")
     parser.add_argument("--email", help="User Gmail address.")
@@ -48,8 +54,7 @@ def main() -> None:
                 return
             for user in users:
                 print(
-                    f"{user.id}: {user.name} <{user.email}> "
-                    f"profile={user.profile_name}"
+                    f"{user.id}: {user.name} <{user.email}> profile={user.profile_name}"
                 )
         return
 

@@ -1,9 +1,9 @@
-﻿"""Simple YouTube channel scraper using channel IDs and public RSS feeds."""
+"""Simple YouTube channel scraper using channel IDs and public RSS feeds."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from email.utils import parsedate_to_datetime
 from re import fullmatch
 from urllib.parse import parse_qs, urlparse
@@ -81,8 +81,7 @@ def clean_channel_id(channel_id: str) -> str:
     value = channel_id.strip()
     if not fullmatch(r"UC[0-9A-Za-z_-]{20,}", value):
         raise YouTubeScraperError(
-            "Use a YouTube channel ID only, for example: "
-            "UC_x5XG1OV2P6uZZ5FSM9Ttw"
+            "Use a YouTube channel ID only, for example: UC_x5XG1OV2P6uZZ5FSM9Ttw"
         )
     return value
 
@@ -123,4 +122,3 @@ if __name__ == "__main__":
     channel = "UC_x5XG1OV2P6uZZ5FSM9Ttw"
     for video in scrape_youtube_channel(channel, limit=5):
         print(f"{video.published_at} | {video.title} | {video.url}")
-

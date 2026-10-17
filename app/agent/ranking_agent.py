@@ -17,8 +17,9 @@ DEFAULT_RANKING_MODEL = default_model(default_provider())
 RANKING_INSTRUCTIONS = """
 You are a personalized AI news ranking agent.
 Rank digest items for a user's stated interests.
-Prefer items that directly match the user's preferred sources, content types, and keywords.
-Also consider semantic relevance: for example, "agentic workflows" should match an interest in "agents".
+Prefer items that directly match the user's preferred sources, content types,
+and keywords. Also consider semantic relevance: "agentic workflows" should
+match an interest in "agents".
 Return every candidate exactly once.
 Use deterministic, consistent scoring from 0 to 100.
 Do not invent facts. Base reasons only on the provided candidate text and profile.

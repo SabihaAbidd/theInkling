@@ -1,4 +1,4 @@
-﻿"""OpenAI news scraper."""
+"""OpenAI news scraper."""
 
 from __future__ import annotations
 

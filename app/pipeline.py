@@ -1,4 +1,4 @@
-﻿"""Pipeline entry point for one complete AI news aggregation run."""
+"""Pipeline entry point for one complete AI news aggregation run."""
 
 from __future__ import annotations
 

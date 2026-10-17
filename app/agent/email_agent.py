@@ -77,9 +77,11 @@ def build_html_email(recipient_name: str, top_digests: TopDigestResponse) -> str
             f"""
             <article>
               <h2>{item.rank}. {escape_html(item.title)}</h2>
-              <p><strong>{escape_html(item.source)}</strong> - {escape_html(item.kind)} - {date}</p>
+              <p><strong>{escape_html(item.source)}</strong> -
+                 {escape_html(item.kind)} - {date}</p>
               <p>{escape_html(item.summary)}</p>
-              <p><strong>Score:</strong> {item.score} - <strong>Ranking:</strong> {escape_html(item.rank_source)}</p>
+              <p><strong>Score:</strong> {item.score} - <strong>Ranking:</strong>
+                 {escape_html(item.rank_source)}</p>
               <p><strong>Why matched:</strong> {escape_html(badges)}</p>
               <p><a href="{item.url}">Read the original</a></p>
             </article>
@@ -99,7 +101,7 @@ def build_html_email(recipient_name: str, top_digests: TopDigestResponse) -> str
           hours, ranked for your profile. Each item includes a short summary and
           the original link.
         </p>
-        {''.join(items_html)}
+        {"".join(items_html)}
       </body>
     </html>
     """.strip()

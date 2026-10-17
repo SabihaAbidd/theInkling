@@ -1,4 +1,4 @@
-﻿"""Data structures returned by website scrapers."""
+"""Data structures returned by website scrapers."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-﻿"""Convenience entry points for scraping AI news websites."""
+"""Convenience entry points for scraping AI news websites."""
 
 from .generic import scrape_all_sources, scrape_feed, scrape_listing_page, scrape_source
 from .models import Article, NewsSource
@@ -17,5 +17,3 @@ __all__ = [
     "YouTubeVideo",
     "scrape_youtube_channel",
 ]
-
-

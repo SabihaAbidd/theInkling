@@ -42,11 +42,21 @@ def llm_status_message(status: str | None) -> str | None:
     if status is None or status == "ok":
         return None
     if status == "missing_key":
-        return "The backend AI API key is missing. Please configure GROQ_API_KEY or GEMINI_API_KEY on Render."
+        return (
+            "The backend AI API key is missing. Please configure GROQ_API_KEY or "
+            "GEMINI_API_KEY on Render."
+        )
     if status == "rate_limited":
-        return "The AI key is currently busy or rate-limited. Too many requests may be using it right now. Please try again later."
+        return (
+            "The AI key is currently busy or rate-limited. Too many requests may be "
+            "using it right now. Please try again later."
+        )
     if status == "invalid_or_forbidden_key":
-        return "The backend AI API key is invalid, forbidden, or not enabled for this model. Please update the key on Render and redeploy."
+        return (
+            "The backend AI API key is invalid, forbidden, or not enabled "
+            "for this model. "
+            "Please update the key on Render and redeploy."
+        )
     if status == "timeout":
         return "The AI request timed out. Please try again in a moment."
     return "The AI service is currently unavailable. Please try again later."

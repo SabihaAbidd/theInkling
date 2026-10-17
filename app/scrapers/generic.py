@@ -1,4 +1,4 @@
-﻿"""Generic website and RSS scraping helpers for AI news sources."""
+"""Generic website and RSS scraping helpers for AI news sources."""
 
 from __future__ import annotations
 
@@ -36,9 +36,13 @@ def scrape_all_sources(
     if source_names:
         allowed_names = {name.strip().lower() for name in source_names if name.strip()}
         selected_sources = tuple(
-            source for source in selected_sources if source.name.lower() in allowed_names
+            source
+            for source in selected_sources
+            if source.name.lower() in allowed_names
         )
-    selected_sources = selected_sources[:max_sources] if max_sources else selected_sources
+    selected_sources = (
+        selected_sources[:max_sources] if max_sources else selected_sources
+    )
     for source in selected_sources:
         try:
             articles.extend(scrape_source(source, limit=limit_per_source))
@@ -92,7 +96,9 @@ def scrape_listing_page(source: NewsSource, limit: int = 10) -> list[Article]:
 
     articles: list[Article] = []
     seen_urls: set[str] = set()
-    for link in soup.select("article a[href], h1 a[href], h2 a[href], h3 a[href], a[href]"):
+    for link in soup.select(
+        "article a[href], h1 a[href], h2 a[href], h3 a[href], a[href]"
+    ):
         title = clean_text(link.get_text(" "))
         url = urljoin(source.url, link.get("href", ""))
         if not is_probable_article(title, url, source.url) or url in seen_urls:
@@ -148,8 +154,19 @@ def is_probable_article(title: str, url: str, base_url: str) -> bool:
     if any(token in url.lower() for token in ignored):
         return False
     nav_titles = {
-        "about", "advertise", "careers", "contact", "home", "login", "privacy",
-        "subscribe", "terms", "topics", "events", "newsletter", "podcasts",
+        "about",
+        "advertise",
+        "careers",
+        "contact",
+        "home",
+        "login",
+        "privacy",
+        "subscribe",
+        "terms",
+        "topics",
+        "events",
+        "newsletter",
+        "podcasts",
         "skip to main content",
     }
     if title.strip().lower() in nav_titles:

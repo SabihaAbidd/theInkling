@@ -1,4 +1,4 @@
-﻿"""Shared service-layer data models."""
+"""Shared service-layer data models."""
 
 from __future__ import annotations
 
@@ -31,7 +31,9 @@ class ProcessedItem:
             "url": self.url,
             "kind": self.kind,
             "summary": self.summary,
-            "published_at": self.published_at.isoformat() if self.published_at else None,
+            "published_at": self.published_at.isoformat()
+            if self.published_at
+            else None,
             "metadata": self.metadata,
             "content": self.content,
             "transcript": self.transcript,

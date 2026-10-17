@@ -50,7 +50,9 @@ def ensure_user_columns() -> None:
 
     with engine.begin() as connection:
         for name, definition in missing_columns:
-            connection.execute(text(f"ALTER TABLE users ADD COLUMN {name} {definition}"))
+            connection.execute(
+                text(f"ALTER TABLE users ADD COLUMN {name} {definition}")
+            )
 
 
 if __name__ == "__main__":

@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from sqlalchemy import (
+    JSON,
     DateTime,
     ForeignKey,
     Integer,
-    JSON,
     String,
     Text,
     UniqueConstraint,
@@ -174,7 +174,9 @@ class PaymentSubscription(Base):
     )
     plan_name: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    mode: Mapped[str] = mapped_column(String(50), default="subscription", nullable=False)
+    mode: Mapped[str] = mapped_column(
+        String(50), default="subscription", nullable=False
+    )
     amount_cents: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     currency: Mapped[str] = mapped_column(String(10), default="usd", nullable=False)
     interval: Mapped[str | None] = mapped_column(String(30), nullable=True)
@@ -233,7 +235,9 @@ class PaymentTransaction(Base):
             "stripe_payment_intent_id",
             name="uq_payment_transactions_payment_intent_id",
         ),
-        UniqueConstraint("stripe_invoice_id", name="uq_payment_transactions_invoice_id"),
+        UniqueConstraint(
+            "stripe_invoice_id", name="uq_payment_transactions_invoice_id"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

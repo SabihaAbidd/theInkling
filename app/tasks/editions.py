@@ -15,7 +15,7 @@ from app.database.repository import (
     upsert_news_items,
 )
 from app.scrapers.sources import sources_for_topics
-from app.services.news_surface import collect_ai_news
+from app.services.curated_news import collect_curated_news
 from app.worker import celery_app
 
 logger = logging.getLogger(__name__)
@@ -44,13 +44,11 @@ def build_edition_task(self, user_id: int, edition_date: str) -> dict:
         )
 
     try:
-        items = collect_ai_news(
-            source_limit=5,
+        items = collect_curated_news(
+            limit_per_source=5,
             max_sources=min(len(sources), 30),
-            source_names=[source.name for source in sources],
+            sources=sources,
             lookback_hours=48,
-            curate=False,
-            store=False,
         )
         with get_session() as session:
             saved_items = upsert_news_items(session, items)

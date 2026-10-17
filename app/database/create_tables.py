@@ -6,10 +6,12 @@ from sqlalchemy import inspect, text
 
 from .connection import Base, engine
 from .models import (  # noqa: F401
+    DailyEdition,
     DigestItem,
     NewsItem,
     PaymentSubscription,
     PaymentTransaction,
+    ReaderFeedback,
     SiteReview,
     SourceRun,
     User,

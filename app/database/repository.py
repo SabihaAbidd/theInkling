@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import TYPE_CHECKING, Iterable
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from .models import (
+    DailyEdition,
     DigestItem,
     NewsItem,
     PaymentSubscription,
     PaymentTransaction,
+    ReaderFeedback,
     SiteReview,
     SourceRun,
     User,
@@ -29,6 +31,153 @@ EMAIL_ADDRESS_PATTERN = re.compile(
     r"^[a-z0-9](?:[a-z0-9._%+-]{0,252}[a-z0-9])?@"
     r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$"
 )
+
+
+def upsert_daily_edition(
+    session: Session,
+    *,
+    user_id: int,
+    edition_date: date,
+    status: str,
+    job_id: str | None = None,
+    title: str = "The Inkling",
+    editorial: str = "",
+    items_snapshot: list[dict] | None = None,
+    pdf_path: str | None = None,
+    error_code: str | None = None,
+) -> DailyEdition:
+    """Create or update a reader's stable daily edition record."""
+
+    edition = session.scalar(
+        select(DailyEdition).where(
+            DailyEdition.user_id == user_id,
+            DailyEdition.edition_date == edition_date,
+        )
+    )
+    if edition is None:
+        edition = DailyEdition(
+            user_id=user_id,
+            edition_date=edition_date,
+            status=status,
+        )
+        session.add(edition)
+
+    edition.status = status
+    edition.job_id = job_id or edition.job_id
+    edition.title = title
+    edition.editorial = editorial
+    if items_snapshot is not None:
+        edition.items_snapshot = items_snapshot
+    if pdf_path is not None:
+        edition.pdf_path = pdf_path
+    edition.error_code = error_code
+    if status == "ready" and edition.generated_at is None:
+        edition.generated_at = datetime.now(UTC)
+    session.flush()
+    return edition
+
+
+def get_daily_edition(
+    session: Session, user_id: int, edition_id: int
+) -> DailyEdition | None:
+    """Get one edition while enforcing its reader ownership boundary."""
+
+    return session.scalar(
+        select(DailyEdition).where(
+            DailyEdition.id == edition_id,
+            DailyEdition.user_id == user_id,
+        )
+    )
+
+
+def get_daily_edition_for_date(
+    session: Session,
+    user_id: int,
+    edition_date: date,
+) -> DailyEdition | None:
+    """Get the edition for one reader and local edition date."""
+
+    return session.scalar(
+        select(DailyEdition).where(
+            DailyEdition.user_id == user_id,
+            DailyEdition.edition_date == edition_date,
+        )
+    )
+
+
+def list_daily_editions(
+    session: Session, user_id: int, limit: int = 30
+) -> list[DailyEdition]:
+    """List a reader's recent editions newest first."""
+
+    return list(
+        session.scalars(
+            select(DailyEdition)
+            .where(DailyEdition.user_id == user_id)
+            .order_by(DailyEdition.edition_date.desc())
+            .limit(max(1, min(limit, 100)))
+        ).all()
+    )
+
+
+def create_reader_feedback(
+    session: Session,
+    *,
+    user_id: int,
+    news_item_id: int,
+    action: str,
+    edition_id: int | None = None,
+    idempotency_key: str | None = None,
+    dwell_seconds: int | None = None,
+) -> tuple[ReaderFeedback, bool]:
+    """Append a feedback event, deduplicating retried client submissions."""
+
+    if idempotency_key:
+        existing = session.scalar(
+            select(ReaderFeedback).where(
+                ReaderFeedback.user_id == user_id,
+                ReaderFeedback.idempotency_key == idempotency_key,
+            )
+        )
+        if existing is not None:
+            return existing, False
+
+    event = ReaderFeedback(
+        user_id=user_id,
+        news_item_id=news_item_id,
+        action=action,
+        edition_id=edition_id,
+        idempotency_key=idempotency_key,
+        dwell_seconds=dwell_seconds,
+    )
+    session.add(event)
+    session.flush()
+    return event, True
+
+
+def list_reader_feedback(
+    session: Session, user_id: int, limit: int = 500
+) -> list[dict]:
+    """Load recent feedback joined to article text for profile learning."""
+
+    rows = session.execute(
+        select(ReaderFeedback, NewsItem)
+        .join(NewsItem, NewsItem.id == ReaderFeedback.news_item_id)
+        .where(ReaderFeedback.user_id == user_id)
+        .order_by(ReaderFeedback.created_at.desc())
+        .limit(max(1, min(limit, 2000)))
+    ).all()
+    return [
+        {
+            "action": event.action,
+            "dwell_seconds": event.dwell_seconds,
+            "title": item.title,
+            "summary": item.summary,
+            "source": item.source,
+            "created_at": event.created_at,
+        }
+        for event, item in rows
+    ]
 
 
 def create_user(

@@ -27,6 +27,19 @@ import "./index.css";
 
 const TOKEN_KEY = "asme_token";
 const USER_KEY = "asme_user";
+const LOCAL_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
+const LOCAL_DEMO_USER = {
+  id: 1,
+  name: "Demo Reader",
+  preferences: {
+    topics: ["world", "science", "technology", "climate"],
+    keywords: [],
+    excluded_keywords: [],
+    preferred_sources: [],
+    top_n: 10,
+    use_llm: true,
+  },
+};
 const TOPIC_GROUPS = [
   {
     title: "The world and public life",
@@ -84,6 +97,10 @@ function App() {
       active = false;
     };
   }, [token]);
+
+  if (LOCAL_DEMO_MODE) {
+    return <ReaderApp user={LOCAL_DEMO_USER} token="" onSignOut={() => {}} />;
+  }
 
   function finishAuth(data) {
     localStorage.setItem(TOKEN_KEY, data.token);
@@ -883,10 +900,12 @@ function ReaderApp({ user, token, onSignOut }) {
             </span>
             <span className="reader-name">{user.name || "Reader"}</span>
           </div>
-          <button className="spine-signout" type="button" onClick={onSignOut}>
-            <LogOut size={15} />
-            <span>Sign out</span>
-          </button>
+          {token && (
+            <button className="spine-signout" type="button" onClick={onSignOut}>
+              <LogOut size={15} />
+              <span>Sign out</span>
+            </button>
+          )}
           <p className="spine-footer">Independent reading, assembled daily.</p>
         </div>
       </aside>

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import os
 import re
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -60,12 +63,62 @@ app.add_middleware(
 )
 security = HTTPBearer(auto_error=False)
 redis_client = None
+DEMO_MODE = os.getenv("DEMO_MODE", "false").strip().lower() in {"1", "true", "yes"}
+demo_rate_counts: dict[str, tuple[float, int]] = {}
+demo_rate_lock = threading.Lock()
+demo_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="inkling-demo")
+
+
+def ensure_demo_reader() -> None:
+    """Create the local, shared demo reader when login is disabled for testing."""
+
+    with get_session() as session:
+        reader = get_user_by_email(session, "reader@theinkling.local")
+        if reader is None:
+            upsert_user(
+                session=session,
+                name="Demo Reader",
+                email="reader@theinkling.local",
+                profile_name="local_demo",
+                password_hash=None,
+                preferences={
+                    "topics": ["world", "science", "technology", "climate"],
+                    "keywords": [],
+                    "excluded_keywords": [],
+                    "preferred_sources": [],
+                    "top_n": 10,
+                    "use_llm": True,
+                },
+            )
 
 
 def redis_rate_limit(times: int, seconds: int, scope: str):
     """Build a distributed fixed-window limit keyed by user or client IP."""
 
     async def dependency(request: Request) -> None:
+        if DEMO_MODE:
+            identity = request.client.host if request.client else "local-demo"
+            authorization = request.headers.get("authorization", "")
+            if authorization.startswith("Bearer "):
+                try:
+                    identity = f"user:{parse_token(authorization[7:])['user_id']}"
+                except (KeyError, ValueError):
+                    pass
+            key = f"rate-limit:{scope}:{identity}"
+            now = time.monotonic()
+            with demo_rate_lock:
+                started, count = demo_rate_counts.get(key, (now, 0))
+                if now - started >= seconds:
+                    started, count = now, 0
+                count += 1
+                demo_rate_counts[key] = (started, count)
+            if count > times:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many requests. Please try again later.",
+                    headers={"Retry-After": str(seconds)},
+                )
+            return
         if redis_client is None:
             raise HTTPException(status_code=503, detail="Request limiter unavailable.")
 
@@ -101,6 +154,9 @@ async def initialize_rate_limiting() -> None:
     """Initialize shared Redis-backed request limits for web instances."""
 
     global redis_client
+    if DEMO_MODE:
+        ensure_demo_reader()
+        return
     redis_client = redis.from_url(
         os.getenv("REDIS_URL", "redis://localhost:6379/0"),
         encoding="utf-8",
@@ -115,6 +171,7 @@ async def close_rate_limit_connection() -> None:
 
     if redis_client is not None:
         await redis_client.aclose()
+    demo_executor.shutdown(wait=False, cancel_futures=True)
 
 
 @app.exception_handler(Exception)
@@ -275,6 +332,16 @@ def current_user(
 ):
     """Resolve the authenticated user from a bearer token."""
 
+    if DEMO_MODE:
+        with get_session() as session:
+            user = get_user_by_email(session, "reader@theinkling.local")
+            if user is None:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Demo reader is unavailable.",
+                )
+            session.expunge(user)
+            return user
     if credentials is None:
         raise HTTPException(status_code=401, detail="Missing auth token.")
     try:
@@ -411,10 +478,17 @@ def request_daily_paper(user=Depends(current_user)) -> dict:
         raise
 
     try:
-        build_edition_task.apply_async(
-            args=[user.id, edition_date.isoformat()],
-            task_id=job_id,
-        )
+        if DEMO_MODE:
+            demo_executor.submit(
+                build_edition_task.apply,
+                args=[user.id, edition_date.isoformat()],
+                task_id=job_id,
+            )
+        else:
+            build_edition_task.apply_async(
+                args=[user.id, edition_date.isoformat()],
+                task_id=job_id,
+            )
     except Exception as exc:
         with get_session() as session:
             edition = get_daily_edition(session, user.id, edition_id)
@@ -423,7 +497,11 @@ def request_daily_paper(user=Depends(current_user)) -> dict:
                 edition.error_code = "queue_unavailable"
         raise HTTPException(
             status_code=503,
-            detail="Paper queue is unavailable. Start Redis and the Celery worker.",
+            detail=(
+                "The local paper task could not be started."
+                if DEMO_MODE
+                else "Paper queue is unavailable. Start Redis and the Celery worker."
+            ),
         ) from exc
 
     with get_session() as session:

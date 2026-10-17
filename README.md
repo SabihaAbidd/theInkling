@@ -36,6 +36,26 @@ descriptions link back to publishers; the reader does not republish full article
 
 ## Start locally
 
+### No-login local demo (no Docker)
+
+For a local product demo without accounts or container services, use SQLite and the in-process demo queue. Set these values in the ignored `.env` file:
+
+    DEMO_MODE=true
+    VITE_DEMO_MODE=true
+    DATABASE_URL=sqlite:///./data/the_inkling_demo.db
+    REDIS_URL=
+    CORS_ORIGINS=http://localhost:5174,http://127.0.0.1:5174
+
+Install dependencies, run migrations, and start the API and web client in separate terminals:
+
+    python -m pipenv sync
+    npm install
+    pipenv run alembic upgrade head
+    pipenv run uvicorn app.web:app --host 127.0.0.1 --port 8000
+    npm run dev:local
+
+Open http://localhost:5174. Demo mode creates a shared local reader and bypasses login. It uses process-local rate limits and runs edition jobs inside the API process; use normal auth, PostgreSQL, Redis, and Celery for deployed environments. If `VITE_DEMO_MODE` changes while Vite is running, restart the frontend server.
+
 ### Docker Compose
 
 1. Copy .env.example to .env and set the keys listed below.

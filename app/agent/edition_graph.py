@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from app.agent.context import ArticleRecord, PaperRunContext, PaperState, ReaderProfile
 from app.agent.model_provider import create_chat_model
+from app.agent.personalization import feedback_relevance_scores
 
 logger = logging.getLogger(__name__)
 
@@ -98,10 +99,9 @@ def rank_articles(
 
     source_articles = state.get("articles", [])
     feedback = state.get("feedback_examples", [])
-    positive_terms = _feedback_terms(feedback, positive=True)
-    negative_terms = _feedback_terms(feedback, positive=False)
+    feedback_scores = feedback_relevance_scores(source_articles, feedback)
 
-    for article in source_articles:
+    for article, feedback_score in zip(source_articles, feedback_scores, strict=True):
         title = str(article.get("title", ""))
         summary = str(article.get("summary", ""))
         content = f"{title} {summary} {article.get('content', '')}".casefold()
@@ -110,19 +110,18 @@ def rank_articles(
             continue
 
         reasons = [term for term in topics if term in content]
-        positive_matches = [term for term in positive_terms if term in content]
-        negative_matches = [term for term in negative_terms if term in content]
-        reasons.extend(f"reader signal: {term}" for term in positive_matches[:3])
+        if feedback_score >= 0.12:
+            reasons.append("similar to stories you saved or read")
         lexical_score = (len(reasons) * 10) + (
             5 if source.casefold() in preferred_sources else 0
         )
-        lexical_score += min(len(positive_matches), 4) * 2
-        lexical_score -= min(len(negative_matches), 4) * 3
+        lexical_score += feedback_score * 20
         if article.get("published_at"):
             lexical_score += 1
         candidate = dict(article)
         candidate["score"] = float(lexical_score)
         candidate["reasons"] = reasons
+        candidate["feedback_score"] = feedback_score
         candidates.append(candidate)
 
     candidates.sort(
@@ -308,53 +307,6 @@ def quality_check(
             "valid": bool(cleaned) and len(cleaned) == len(seen),
         },
     }
-
-
-def _feedback_terms(feedback: list[dict[str, Any]], *, positive: bool) -> list[str]:
-    """Find recurring content terms in saved/opened or skipped story signals."""
-
-    stop_words = {
-        "about",
-        "after",
-        "also",
-        "because",
-        "been",
-        "could",
-        "from",
-        "have",
-        "into",
-        "more",
-        "news",
-        "over",
-        "that",
-        "their",
-        "there",
-        "these",
-        "they",
-        "this",
-        "were",
-        "what",
-        "when",
-        "where",
-        "which",
-        "while",
-        "with",
-        "would",
-        "your",
-    }
-    counts: dict[str, int] = {}
-    for item in feedback:
-        action = item.get("action")
-        is_positive = action == "saved" or (
-            action == "opened" and int(item.get("dwell_seconds") or 0) >= 30
-        )
-        if is_positive != positive:
-            continue
-        text = f"{item.get('title', '')} {item.get('summary', '')}".casefold()
-        for term in set(re.findall(r"[a-z][a-z0-9-]{3,}", text)) - stop_words:
-            counts[term] = counts.get(term, 0) + 1
-    sorted_terms = sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))
-    return [term for term, _ in sorted_terms[:30]]
 
 
 def _feedback_summary(item: dict[str, Any]) -> dict[str, str]:

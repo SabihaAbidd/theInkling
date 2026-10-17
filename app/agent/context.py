@@ -17,6 +17,7 @@ class ArticleRecord(TypedDict, total=False):
     content: str
     published_at: str | None
     score: float
+    feedback_score: float
     reasons: list[str]
 
 
